@@ -248,6 +248,48 @@
                  </div>
             </section>
 
+            <section id="edit-topic" class="app-section bg-white rounded-lg shadow p-4 md:p-6 hidden">
+                <h2 id="topic-form-title" class="text-lg font-semibold mb-4 border-b pb-2">Edit Topic</h2>
+                <form id="topic-form" class="space-y-4">
+                    <input type="hidden" id="topic-id">
+                    <div>
+                        <label for="topic-name" class="block text-sm font-medium text-gray-700">Name *</label>
+                        <input type="text" id="topic-name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="topic-description" class="block text-sm font-medium text-gray-700">Description *</label>
+                        <textarea id="topic-description" rows="3" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                    </div>
+                    <div>
+                        <label for="topic-level" class="block text-sm font-medium text-gray-700">Station (1-4) *</label>
+                        <select id="topic-level" required class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="1">Station 1</option>
+                            <option value="2">Station 2</option>
+                            <option value="3">Station 3</option>
+                            <option value="4">Station 4</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="topic-url" class="block text-sm font-medium text-gray-700">Reference URL</label>
+                        <input type="url" id="topic-url" placeholder="https://example.com/topic-info" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+
+                    <fieldset class="border p-4 rounded-md">
+                        <legend class="text-sm font-medium text-gray-700 px-1">Media Resources (URLs)</legend>
+                        <div id="media-url-inputs" class="space-y-3">
+                            </div>
+                        <button type="button" id="add-media-url" class="mt-2 text-sm text-blue-600 hover:text-blue-800">+ Add another URL</button>
+                    </fieldset>
+
+                    <div class="flex justify-end gap-2 pt-4 border-t">
+                         <button type="button" id="cancel-topic-form" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg text-sm transition duration-150 ease-in-out">Cancel</button>
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out">
+                            <img src="https://unpkg.com/lucide-static@latest/icons/save.svg" alt="save icon" /> <span id="topic-form-submit-text">Save Topic</span>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
             <section id="test-mode" class="app-section bg-white rounded-lg shadow p-4 md:p-6 hidden">
                 <div id="test-setup" class="space-y-4">
                     <h2 class="text-lg font-semibold mb-4 border-b pb-2">Setup Test Session</h2>
@@ -465,6 +507,19 @@
         const backToBrowserBottomButton = document.getElementById('back-to-browser-bottom');
         const editKnotFromDetailButton = document.getElementById('edit-knot-from-detail');
         const deleteKnotFromDetailButton = document.getElementById('delete-knot-from-detail');
+
+        // Edit Topic Form Elements
+        const topicForm = document.getElementById('topic-form');
+        const topicFormTitle = document.getElementById('topic-form-title');
+        const topicIdInput = document.getElementById('topic-id');
+        const topicNameInput = document.getElementById('topic-name');
+        const topicDescriptionInput = document.getElementById('topic-description');
+        const topicLevelSelect = document.getElementById('topic-level');
+        const topicUrlInput = document.getElementById('topic-url');
+        const mediaUrlInputsContainer = document.getElementById('media-url-inputs');
+        const addMediaUrlButton = document.getElementById('add-media-url');
+        const cancelTopicFormButton = document.getElementById('cancel-topic-form');
+        const topicFormSubmitText = document.getElementById('topic-form-submit-text');
 
         // Test Mode Elements
         const testSetupSection = document.getElementById('test-setup');
@@ -1087,13 +1142,13 @@
         /**
          * Resets the Add/Edit knot form to its default state for adding a new knot.
          */
-        function resetKnotForm() {
-            knotForm.reset();
-            knotIdInput.value = '';
-            knotFormTitle.textContent = 'Add New Knot';
-            knotFormSubmitText.textContent = 'Save Knot';
+        function resetTopicForm() {
+            topicForm.reset();
+            topicIdInput.value = '';
+            topicFormTitle.textContent = 'Edit Topic';
+            topicFormSubmitText.textContent = 'Save Topic';
             mediaUrlInputsContainer.innerHTML = ''; // Clear all media rows
-            addMediaUrlRow(); // Add one blank row for a new knot
+            addMediaUrlRow(); // Add one blank row
         }
 
         /**
@@ -1134,28 +1189,26 @@
         }
 
         /**
-         * Loads an existing knot's data into the form for editing.
-         * @param {string} knotId - The ID of the knot to edit.
+         * Loads an existing topic's data into the form for editing.
+         * @param {string} knotId - The ID of the topic to edit.
          */
         function loadKnotIntoForm(knotId) {
             const knot = getKnotById(knotId);
             if (!knot) {
-                showToast("Error: Knot not found for editing.", "error");
+                showToast("Error: Topic not found for editing.", "error");
                 return;
             }
 
             // Don't reset the form fully, just set the values
-            knotFormTitle.textContent = 'Edit Knot';
-            knotFormSubmitText.textContent = 'Update Knot';
-            knotIdInput.value = knot.id; // Set the hidden ID field
-            knotNameInput.value = knot.name;
-            knotAlternateNamesInput.value = knot.alternateNames ? knot.alternateNames.join(', ') : '';
-            knotDescriptionInput.value = knot.description;
-            knotLevelSelect.value = knot.typingLevel.toString();
-            knotCategoryInput.value = knot.category || '';
-            knotUrlInput.value = knot.url || '';
+            topicFormTitle.textContent = 'Edit Topic';
+            topicFormSubmitText.textContent = 'Update Topic';
+            topicIdInput.value = knot.id; // Set the hidden ID field
+            topicNameInput.value = knot.name;
+            topicDescriptionInput.value = knot.description;
+            topicLevelSelect.value = knot.typingLevel.toString();
+            topicUrlInput.value = knot.url || '';
 
-            // Populate media URLs - Clear existing first, then add based on knot data
+            // Populate media URLs - Clear existing first, then add based on topic data
             mediaUrlInputsContainer.innerHTML = ''; // *Crucial: Clear before adding*
             if (knot.mediaUrls && knot.mediaUrls.length > 0) {
                 knot.mediaUrls.forEach(media => {
@@ -1163,21 +1216,21 @@
                     addMediaUrlRow(media.type, media.url);
                 });
             } else {
-                // If the knot has no media URLs, add one blank row for editing
+                // If the topic has no media URLs, add one blank row for editing
                 addMediaUrlRow();
             }
 
-            navigateTo('add-knot'); // Navigate *after* populating
+            navigateTo('edit-topic'); // Navigate *after* populating
         }
 
         /**
-         * Handles the submission of the knot form (both add and edit).
+         * Handles the submission of the topic form for editing.
          * @param {Event} event - The form submission event.
          */
-        function handleKnotFormSubmit(event) {
+        function handleTopicFormSubmit(event) {
             event.preventDefault();
 
-            const knotId = knotIdInput.value; // Read the hidden ID field
+            const topicId = topicIdInput.value; // Read the hidden ID field
             const mediaUrls = [];
             mediaUrlInputsContainer.querySelectorAll('.media-url-row').forEach(row => {
                 const type = row.querySelector('.media-type-select').value;
@@ -1187,30 +1240,25 @@
                 }
             });
 
-            const knotData = {
-                name: knotNameInput.value.trim(),
-                alternateNames: knotAlternateNamesInput.value.split(',')
-                                    .map(name => name.trim())
-                                    .filter(name => name !== ''),
-                description: knotDescriptionInput.value.trim(),
-                typingLevel: parseInt(knotLevelSelect.value, 10),
-                category: knotCategoryInput.value.trim(),
+            const topicData = {
+                name: topicNameInput.value.trim(),
+                description: topicDescriptionInput.value.trim(),
+                typingLevel: parseInt(topicLevelSelect.value, 10),
                 mediaUrls: mediaUrls,
-                url: knotUrlInput.value.trim() || null
+                url: topicUrlInput.value.trim() || null
             };
 
-            if (!knotData.name || !knotData.description || !knotData.category) {
+            if (!topicData.name || !topicData.description) {
                  showToast("Please fill in all required fields (*).", "error");
                  return;
             }
 
-            if (knotId) {
-                updateKnot(knotId, knotData);
-            } else {
-                addKnot(knotData);
+            if (topicId) {
+                updateKnot(topicId, topicData);
+                showToast("Topic updated successfully!", "success");
             }
 
-            resetKnotForm(); // Reset form state after successful submission
+            resetTopicForm(); // Reset form state after successful submission
             navigateTo('browser');
         }
 
@@ -2274,6 +2322,14 @@
             backToBrowserButton.addEventListener('click', () => navigateTo('browser'));
             backToBrowserBottomButton.addEventListener('click', () => navigateTo('browser'));
              // Edit/Delete buttons attached in renderKnotDetail
+
+            // Edit Topic Form
+            topicForm.addEventListener('submit', handleTopicFormSubmit);
+            addMediaUrlButton.addEventListener('click', () => addMediaUrlRow()); // Add blank row on button click
+            cancelTopicFormButton.addEventListener('click', () => {
+                resetTopicForm(); // Clear form state
+                navigateTo('browser');
+            });
 
              // Test Mode Setup
              startTestButton.addEventListener('click', startTest);
