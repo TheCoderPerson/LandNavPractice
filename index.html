@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#2563eb">
-    <meta name="description" content="A progressive web app for learning and testing knots">
-    <link rel="manifest" href="/KnotPractice/manifest.json">
+    <meta name="description" content="A progressive web app for learning and testing land navigation topics">
+    <link rel="manifest" href="/LandNavPractice/manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
-    <title>Knot Testing App</title>
+    <title>Land Nav Testing App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <style>
@@ -145,7 +145,7 @@
       // Register Service Worker
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/KnotPractice/service-worker.js')
+          navigator.serviceWorker.register('/LandNavPractice/service-worker.js')
             .then(registration => {
               console.log('ServiceWorker registration successful');
             })
@@ -160,7 +160,7 @@
 
     <header class="bg-blue-600 text-white p-3 shadow-md sticky top-0 z-20">
         <div class="container mx-auto max-w-4xl flex justify-between items-center">
-            <h1 class="text-xl font-bold">Knot Testing App</h1>
+            <h1 class="text-xl font-bold">Land Nav Testing App</h1>
             <button id="menu-toggle" class="md:hidden p-2 rounded hover:bg-blue-700 transition-colors">
                 <img src="https://unpkg.com/lucide-static@latest/icons/menu.svg" alt="menu icon" class="w-6 h-6" />
             </button>
@@ -173,9 +173,6 @@
             <div class="flex flex-col md:flex-row md:flex-wrap md:justify-center md:gap-2">
                 <button data-section="browser" class="nav-button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out mb-2 md:mb-0">
                     <img src="https://unpkg.com/lucide-static@latest/icons/list.svg" alt="list icon" /> Browse
-                </button>
-                <button data-section="add-knot" class="nav-button bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out mb-2 md:mb-0">
-                    <img src="https://unpkg.com/lucide-static@latest/icons/plus.svg" alt="plus icon" /> Add Knot
                 </button>
                 <button data-section="test-mode" class="nav-button bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out mb-2 md:mb-0">
                     <img src="https://unpkg.com/lucide-static@latest/icons/test-tube.svg" alt="test tube icon" /> Test
@@ -193,7 +190,7 @@
         <div id="app-content">
 
             <section id="browser" class="app-section bg-white rounded-lg shadow p-4 md:p-6 hidden">
-                <h2 class="text-lg font-semibold mb-4 border-b pb-2">Knot Browser</h2>
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2">Land Nav Browser</h2>
                 <div class="flex flex-wrap gap-4 mb-4 items-end">
                     <div class="flex-grow min-w-[150px]">
                         <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
@@ -205,9 +202,9 @@
                         </div>
                     </div>
                     <div>
-                        <label for="filter-level" class="block text-sm font-medium text-gray-700 mb-1">Level</label>
+                        <label for="filter-level" class="block text-sm font-medium text-gray-700 mb-1">Station</label>
                         <select id="filter-level" class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            <option value="all">All Levels</option>
+                            <option value="all">All Stations</option>
                             <option value="1">1</option>
                             <option value="2">2</option>
                             <option value="3">3</option>
@@ -215,18 +212,12 @@
                         </select>
                     </div>
                     <div>
-                        <label for="filter-category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                        <select id="filter-category" class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            <option value="all">All Categories</option>
-                            </select>
-                    </div>
-                    <div>
                         <label for="sort-by" class="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
                         <select id="sort-by" class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                             <option value="name-asc">Name (A-Z)</option>
                             <option value="name-desc">Name (Z-A)</option>
-                            <option value="level-asc">Level (Low-High)</option>
-                            <option value="level-desc">Level (High-Low)</option>
+                            <option value="level-asc">Station (Low-High)</option>
+                            <option value="level-desc">Station (High-Low)</option>
                             <option value="next-review-asc">Next Review (Soonest)</option>
                         </select>
                     </div>
@@ -257,89 +248,22 @@
                  </div>
             </section>
 
-            <section id="add-knot" class="app-section bg-white rounded-lg shadow p-4 md:p-6 hidden">
-                <h2 id="knot-form-title" class="text-lg font-semibold mb-4 border-b pb-2">Add New Knot</h2>
-                <form id="knot-form" class="space-y-4">
-                    <input type="hidden" id="knot-id">
-                    <div>
-                        <label for="knot-name" class="block text-sm font-medium text-gray-700">Name *</label>
-                        <input type="text" id="knot-name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    </div>
-                    <div>
-                        <label for="knot-alternate-names" class="block text-sm font-medium text-gray-700">Alternate Names (comma-separated)</label>
-                        <input type="text" id="knot-alternate-names" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    </div>
-                    <div>
-                        <label for="knot-description" class="block text-sm font-medium text-gray-700">Description *</label>
-                        <textarea id="knot-description" rows="3" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
-                    </div>
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="knot-level" class="block text-sm font-medium text-gray-700">Tying Level (1-4) *</label>
-                            <select id="knot-level" required class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                <option value="1">1 (Type1 - Hard)</option>
-                                <option value="2">2 (Type2 - Medium)</option>
-                                <option value="3">3 (Type3 - Begginer)</option>
-                                <option value="4">4 (Type4 - Easy)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="knot-category" class="block text-sm font-medium text-gray-700">Category *</label>
-                            <input type="text" id="knot-category" list="category-suggestions" required placeholder="e.g., hitch, bend, loop" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                             <datalist id="category-suggestions">
-                                <option value="knot"></option>
-                                <option value="hitch"></option>
-                                <option value="bend"></option>
-                                <option value="loop"></option>
-                                <option value="stopper"></option>
-                                <option value="binding"></option>
-                                <option value="decorative"></option>
-                            </datalist>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="knot-url" class="block text-sm font-medium text-gray-700">Reference URL</label>
-                        <input type="url" id="knot-url" placeholder="https://example.com/knot-info" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    </div>
-
-                    <fieldset class="border p-4 rounded-md">
-                        <legend class="text-sm font-medium text-gray-700 px-1">Media Resources (URLs)</legend>
-                        <div id="media-url-inputs" class="space-y-3">
-                            </div>
-                        <button type="button" id="add-media-url" class="mt-2 text-sm text-blue-600 hover:text-blue-800">+ Add another URL</button>
-                    </fieldset>
-
-                    <div class="flex justify-end gap-2 pt-4 border-t">
-                         <button type="button" id="cancel-knot-form" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg text-sm transition duration-150 ease-in-out">Cancel</button>
-                        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out">
-                            <img src="https://unpkg.com/lucide-static@latest/icons/save.svg" alt="save icon" /> <span id="knot-form-submit-text">Save Knot</span>
-                        </button>
-                    </div>
-                </form>
-            </section>
-
             <section id="test-mode" class="app-section bg-white rounded-lg shadow p-4 md:p-6 hidden">
                 <div id="test-setup" class="space-y-4">
                     <h2 class="text-lg font-semibold mb-4 border-b pb-2">Setup Test Session</h2>
                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Select Levels to Test:</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Select Stations to Test:</label>
                         <div class="flex flex-wrap gap-x-4 gap-y-2">
-                            <label class="inline-flex items-center"><input type="checkbox" class="test-level-checkbox rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50" value="1" checked> <span class="ml-2">Level 1</span></label>
-                            <label class="inline-flex items-center"><input type="checkbox" class="test-level-checkbox rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50" value="2" checked> <span class="ml-2">Level 2</span></label>
-                            <label class="inline-flex items-center"><input type="checkbox" class="test-level-checkbox rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50" value="3" checked> <span class="ml-2">Level 3</span></label>
-                            <label class="inline-flex items-center"><input type="checkbox" class="test-level-checkbox rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50" value="4" checked> <span class="ml-2">Level 4</span></label>
+                            <label class="inline-flex items-center"><input type="checkbox" class="test-level-checkbox rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50" value="1" checked> <span class="ml-2">Station 1</span></label>
+                            <label class="inline-flex items-center"><input type="checkbox" class="test-level-checkbox rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50" value="2" checked> <span class="ml-2">Station 2</span></label>
+                            <label class="inline-flex items-center"><input type="checkbox" class="test-level-checkbox rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50" value="3" checked> <span class="ml-2">Station 3</span></label>
+                            <label class="inline-flex items-center"><input type="checkbox" class="test-level-checkbox rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50" value="4" checked> <span class="ml-2">Station 4</span></label>
                         </div>
                     </div>
                      <div>
-                        <label for="test-category" class="block text-sm font-medium text-gray-700">Select Category:</label>
-                        <select id="test-category" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            <option value="all">All Categories</option>
-                            </select>
-                    </div>
-                     <div>
-                        <label for="test-knot-count" class="block text-sm font-medium text-gray-700">Number of Knots:</label>
+                        <label for="test-knot-count" class="block text-sm font-medium text-gray-700">Number of Topics:</label>
                         <input type="number" id="test-knot-count" value="10" min="1" max="50" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        <p class="text-xs text-gray-500 mt-1">Max 50. Includes due knots + random selection.</p>
+                        <p class="text-xs text-gray-500 mt-1">Max 50. Includes due topics + random selection.</p>
                     </div>
                      <div class="flex justify-end gap-2 pt-4 border-t">
                         <button id="start-test-button" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out">
@@ -351,14 +275,13 @@
 
                 <div id="test-interface" class="hidden space-y-4">
                     <div class="flex justify-between items-center border-b pb-2">
-                         <h2 class="text-lg font-semibold">Testing Knot: <span id="test-progress">1/10</span></h2>
+                         <h2 class="text-lg font-semibold">Testing Topic: <span id="test-progress">1/10</span></h2>
                          <button id="end-test-button" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-1 px-3 rounded-lg text-xs transition duration-150 ease-in-out">End Session</button>
                     </div>
 
                     <div class="text-center p-4 bg-gray-50 rounded-lg">
-                        <p class="text-sm text-gray-600">Attempt to tie the:</p>
-                        <h3 id="test-knot-name" class="text-2xl md:text-3xl font-bold my-2">Knot Name</h3>
-                        <p id="test-knot-alternate" class="text-sm text-gray-500 italic"></p>
+                        <p class="text-sm text-gray-600">Identify and demonstrate:</p>
+                        <h3 id="test-knot-name" class="text-2xl md:text-3xl font-bold my-2">Topic Name</h3>
                     </div>
 
                     <div id="test-answer-area" class="hidden bg-blue-50 p-4 rounded-lg border border-blue-200 space-y-3">
@@ -407,22 +330,16 @@
                 <div class="space-y-6"> <div>
                         <h3 class="font-medium text-gray-800 mb-2">Overall Stats</h3>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                             <p><strong class="font-semibold text-gray-700">Total Knots:</strong> <span id="stat-total-knots">0</span></p>
+                             <p><strong class="font-semibold text-gray-700">Total Topics:</strong> <span id="stat-total-knots">0</span></p>
                              <p><strong class="font-semibold text-gray-700">Mastered:</strong> <span id="stat-mastered-knots">0</span></p>
                              <p><strong class="font-semibold text-gray-700">Due Today:</strong> <span id="stat-due-today">0</span></p>
                         </div>
                     </div>
                      <div>
-                        <h3 class="font-medium text-gray-800 mb-2">Most Challenging Knots (Lowest Ease Factor)</h3>
+                        <h3 class="font-medium text-gray-800 mb-2">Most Challenging Topics (Lowest Ease Factor)</h3>
                         <ul id="stat-challenging-knots" class="list-disc list-inside text-sm text-gray-600 space-y-1">
                             <li>No data yet.</li>
                         </ul>
-                    </div>
-                    <div>
-                        <h3 class="font-medium text-gray-800 mb-2">Progress by Category</h3>
-                        <div id="stat-category-progress" class="text-sm text-gray-600 space-y-1">
-                             <p>No data yet.</p>
-                        </div>
                     </div>
                      <div>
                         <h3 class="font-medium text-gray-800 mb-2">Historical Performance (% Correct per Day)</h3>
@@ -438,8 +355,8 @@
                 <h2 class="text-lg font-semibold mb-4 border-b pb-2">Import / Export Data</h2>
 
                 <div class="mb-6 pb-6 border-b">
-                    <h3 class="font-medium mb-2">Export Knots</h3>
-                    <p class="text-sm text-gray-600 mb-3">Export all your knot data and optionally your learning progress to a JSON file.</p>
+                    <h3 class="font-medium mb-2">Export Topics</h3>
+                    <p class="text-sm text-gray-600 mb-3">Export all your topic data and optionally your learning progress to a JSON file.</p>
                     <div class="mb-3">
                          <label class="inline-flex items-center">
                             <input type="checkbox" id="export-include-progress" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50" checked>
@@ -452,8 +369,8 @@
                 </div>
 
                 <div>
-                    <h3 class="font-medium mb-2">Import Knots</h3>
-                    <p class="text-sm text-red-600 mb-3 font-semibold">Warning: Importing will replace ALL current knot and progress data.</p>
+                    <h3 class="font-medium mb-2">Import Topics</h3>
+                    <p class="text-sm text-red-600 mb-3 font-semibold">Warning: Importing will replace ALL current topic and progress data.</p>
                     
                     <div class="flex mb-2">
                         <button id="import-local-tab" class="px-4 py-2 border-b-2 border-blue-500 font-medium text-sm text-blue-600">From Local File</button>
@@ -468,7 +385,7 @@
                     <div id="import-url-section" class="hidden">
                         <p class="text-sm text-gray-600 mb-3">Enter a URL to a JSON file to import.</p>
                         <div class="flex mb-3">
-                            <input type="url" id="import-url" placeholder="https://example.com/knots.json" class="block w-full px-3 py-2 border border-gray-300 rounded-l-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <input type="url" id="import-url" placeholder="https://example.com/topics.json" class="block w-full px-3 py-2 border border-gray-300 rounded-l-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                             <button id="import-url-validate" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-r-md border border-gray-300 border-l-0 text-sm transition duration-150 ease-in-out">
                                 Validate
                             </button>
@@ -492,7 +409,7 @@
                 </div>
                  <div class="mt-6 pt-6 border-t">
                     <h3 class="font-medium mb-2 text-red-700">Reset Data</h3>
-                    <p class="text-sm text-gray-600 mb-3">Permanently delete all knots and progress data.</p>
+                    <p class="text-sm text-gray-600 mb-3">Permanently delete all topics and progress data.</p>
                     <button id="reset-all-data-button" class="bg-red-600 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out">
                         <img src="https://unpkg.com/lucide-static@latest/icons/trash.svg" alt="trash icon" /> Reset All Data
                     </button>
@@ -510,7 +427,7 @@
         </div> </main>
 
     <footer class="text-center text-xs text-gray-500 p-4 mt-auto">
-        Knot Testing App | Client-Side Storage
+        Land Nav Testing App | Client-Side Storage
     </footer>
 
     <script>
@@ -535,14 +452,13 @@
         const menuToggle = document.getElementById('menu-toggle');
         const mainNav = document.getElementById('main-nav');
 
-        // Knot Browser Elements
+        // Topic Browser Elements
         const knotListContainer = document.getElementById('knot-list');
         const searchInput = document.getElementById('search-input');
         const filterLevelSelect = document.getElementById('filter-level');
-        const filterCategorySelect = document.getElementById('filter-category');
         const sortBySelect = document.getElementById('sort-by');
 
-        // Knot Detail Elements
+        // Topic Detail Elements
         const knotDetailSection = document.getElementById('knot-detail');
         const knotDetailContent = document.getElementById('knot-detail-content');
         const backToBrowserButton = document.getElementById('back-to-browser');
@@ -550,34 +466,17 @@
         const editKnotFromDetailButton = document.getElementById('edit-knot-from-detail');
         const deleteKnotFromDetailButton = document.getElementById('delete-knot-from-detail');
 
-        // Add/Edit Knot Form Elements
-        const knotForm = document.getElementById('knot-form');
-        const knotFormTitle = document.getElementById('knot-form-title');
-        const knotIdInput = document.getElementById('knot-id');
-        const knotNameInput = document.getElementById('knot-name');
-        const knotAlternateNamesInput = document.getElementById('knot-alternate-names');
-        const knotDescriptionInput = document.getElementById('knot-description');
-        const knotLevelSelect = document.getElementById('knot-level');
-        const knotCategoryInput = document.getElementById('knot-category');
-        const knotUrlInput = document.getElementById('knot-url');
-        const mediaUrlInputsContainer = document.getElementById('media-url-inputs');
-        const addMediaUrlButton = document.getElementById('add-media-url');
-        const cancelKnotFormButton = document.getElementById('cancel-knot-form');
-        const knotFormSubmitText = document.getElementById('knot-form-submit-text');
-
         // Test Mode Elements
         const testSetupSection = document.getElementById('test-setup');
         const testInterfaceSection = document.getElementById('test-interface');
         const testSummarySection = document.getElementById('test-summary');
         const testLevelCheckboxes = document.querySelectorAll('.test-level-checkbox');
-        const testCategorySelect = document.getElementById('test-category');
         const testKnotCountInput = document.getElementById('test-knot-count');
         const startTestButton = document.getElementById('start-test-button');
         const testSetupError = document.getElementById('test-setup-error');
         const testProgressSpan = document.getElementById('test-progress');
         const endTestButton = document.getElementById('end-test-button');
         const testKnotNameH3 = document.getElementById('test-knot-name');
-        const testKnotAlternateP = document.getElementById('test-knot-alternate');
         const testAnswerArea = document.getElementById('test-answer-area');
         const testKnotMediaDiv = document.getElementById('test-knot-media');
         const testKnotDescriptionP = document.getElementById('test-knot-description');
@@ -595,7 +494,6 @@
         const statMasteredKnots = document.getElementById('stat-mastered-knots');
         const statDueToday = document.getElementById('stat-due-today');
         const statChallengingKnots = document.getElementById('stat-challenging-knots');
-        const statCategoryProgress = document.getElementById('stat-category-progress');
         const progressChartCanvas = document.getElementById('progress-chart');
         const chartMessage = document.getElementById('chart-message');
 
@@ -1059,41 +957,9 @@
         /**
          * Populates the category filter dropdowns based on current knots.
          */
+        // Categories have been removed from Land Nav app
         function populateCategoryFilters() {
-             const categories = [...new Set(knotDatabase.map(k => k.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })); // Case-insensitive sort
-
-             // Populate Browser Filter
-             const currentBrowserFilter = filterCategorySelect.value; // Preserve selection if possible
-             filterCategorySelect.innerHTML = '<option value="all">All Categories</option>';
-             categories.forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat.toLowerCase(); // Use lowercase value for filtering consistency
-                option.textContent = cat;
-                filterCategorySelect.appendChild(option);
-             });
-             // Restore selection if the category still exists
-             if (categories.map(c => c.toLowerCase()).includes(currentBrowserFilter)) {
-                 filterCategorySelect.value = currentBrowserFilter;
-             } else {
-                 filterCategorySelect.value = 'all'; // Default back to 'all' if category was removed
-             }
-
-
-             // Populate Test Setup Filter
-             const currentTestFilter = testCategorySelect.value; // Preserve selection
-             testCategorySelect.innerHTML = '<option value="all">All Categories</option>';
-             categories.forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat.toLowerCase();
-                option.textContent = cat;
-                testCategorySelect.appendChild(option);
-             });
-              // Restore selection
-             if (categories.map(c => c.toLowerCase()).includes(currentTestFilter)) {
-                 testCategorySelect.value = currentTestFilter;
-             } else {
-                 testCategorySelect.value = 'all';
-             }
+            // No-op function - categories removed
         }
 
 
@@ -1103,15 +969,12 @@
         function renderKnotBrowser() {
             const searchTerm = searchInput.value.toLowerCase();
             const levelFilter = filterLevelSelect.value;
-            const categoryFilter = filterCategorySelect.value; // Already lowercase from populateCategoryFilters
             const sortBy = sortBySelect.value;
 
             let filteredKnots = knotDatabase.filter(knot => {
-                const nameMatch = knot.name.toLowerCase().includes(searchTerm) ||
-                                  (knot.alternateNames && knot.alternateNames.some(alt => alt.toLowerCase().includes(searchTerm)));
+                const nameMatch = knot.name.toLowerCase().includes(searchTerm);
                 const levelMatch = levelFilter === 'all' || knot.typingLevel.toString() === levelFilter;
-                const categoryMatch = categoryFilter === 'all' || (knot.category && knot.category.toLowerCase() === categoryFilter);
-                return nameMatch && levelMatch && categoryMatch;
+                return nameMatch && levelMatch;
             });
 
             // Sorting
@@ -1134,7 +997,7 @@
             knotListContainer.innerHTML = '';
 
             if (filteredKnots.length === 0) {
-                knotListContainer.innerHTML = '<p class="text-gray-500 italic text-center my-4">No knots match your criteria. Try adjusting filters or adding knots.</p>';
+                knotListContainer.innerHTML = '<p class="text-gray-500 italic text-center my-4">No topics match your criteria. Try adjusting filters.</p>';
                 return;
             }
 
@@ -1154,7 +1017,7 @@
                 knotElement.innerHTML = `
                     <div>
                         <h3 class="font-semibold text-blue-700">${knot.name}</h3>
-                        <p class="text-sm text-gray-600">Level: ${knot.typingLevel} | ${knot.category || 'N/A'}</p>
+                        <p class="text-sm text-gray-600">Station: ${knot.typingLevel}</p>
                         <p class="text-xs text-gray-500">Next Review: <span class="${isDue ? 'font-bold text-red-600' : ''}">${nextReview}</span> (Ease: ${knot.learning.easeFactor.toFixed(1)})</p>
                     </div>
                 `;
@@ -1163,11 +1026,6 @@
                 // Add event listeners directly to the knot element
                 knotElement.addEventListener('click', () => {
                     renderKnotDetail(knot.id);
-                });
-                
-                // Add click, edit and delete functionality to the entire knot element
-                knotElement.addEventListener('dblclick', (e) => {
-                    loadKnotIntoForm(knot.id);
                 });
             });
         }
@@ -1179,7 +1037,7 @@
         function renderKnotDetail(knotId) {
             const knot = getKnotById(knotId);
             if (!knot) {
-                showToast("Error: Knot not found.", "error");
+                showToast("Error: Topic not found.", "error");
                 navigateTo('browser');
                 return;
             }
@@ -1188,12 +1046,10 @@
 
             knotDetailSection.dataset.knotId = knotId;
             knotDetailContent.innerHTML = `
-                <h2 class="text-2xl font-bold mb-1">${knot.name}</h2>
-                ${knot.alternateNames && knot.alternateNames.length > 0 ? `<p class="text-sm text-gray-500 italic mb-3">Also known as: ${knot.alternateNames.join(', ')}</p>` : ''}
+                <h2 class="text-2xl font-bold mb-3">${knot.name}</h2>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 mb-4 text-sm">
-                    <p><strong class="font-semibold text-gray-700">Category:</strong> ${knot.category || 'N/A'}</p>
-                    <p><strong class="font-semibold text-gray-700">Level:</strong> ${knot.typingLevel}</p>
+                    <p><strong class="font-semibold text-gray-700">Station:</strong> ${knot.typingLevel}</p>
                     <p><strong class="font-semibold text-gray-700">Next Review:</strong> ${knot.learning.nextReviewDate || 'N/A'}</p>
                     <p><strong class="font-semibold text-gray-700">Ease Factor:</strong> ${knot.learning.easeFactor.toFixed(2)}</p>
                     <p><strong class="font-semibold text-gray-700">Interval:</strong> ${knot.learning.interval} days</p>
@@ -1482,30 +1338,28 @@
             const selectedLevels = Array.from(testLevelCheckboxes)
                                      .filter(cb => cb.checked)
                                      .map(cb => parseInt(cb.value, 10));
-            const selectedCategory = testCategorySelect.value; // Lowercase value
             const maxKnots = parseInt(testKnotCountInput.value, 10);
 
             testSetupError.classList.add('hidden');
 
             if (selectedLevels.length === 0) {
-                testSetupError.textContent = 'Please select at least one difficulty level.';
+                testSetupError.textContent = 'Please select at least one station.';
                 testSetupError.classList.remove('hidden');
                 return;
             }
             if (isNaN(maxKnots) || maxKnots < 1 || maxKnots > 50) {
-                 testSetupError.textContent = 'Please enter a valid number of knots (1-50).';
+                 testSetupError.textContent = 'Please enter a valid number of topics (1-50).';
                  testSetupError.classList.remove('hidden');
                  return;
             }
 
             let eligibleKnots = knotDatabase.filter(knot => {
                 const levelMatch = selectedLevels.includes(knot.typingLevel);
-                const categoryMatch = selectedCategory === 'all' || (knot.category && knot.category.toLowerCase() === selectedCategory);
-                return levelMatch && categoryMatch;
+                return levelMatch;
             });
 
             if (eligibleKnots.length === 0) {
-                 testSetupError.textContent = 'No knots found matching your criteria. Adjust selections or add more knots.';
+                 testSetupError.textContent = 'No topics found matching your criteria. Adjust selections.';
                  testSetupError.classList.remove('hidden');
                  return;
             }
@@ -1513,7 +1367,7 @@
             const knotsToTest = selectKnotsForSession(eligibleKnots, maxKnots);
 
              if (knotsToTest.length === 0) {
-                 testSetupError.textContent = 'Could not select any knots for testing (perhaps none are due or available?). Try adjusting criteria.';
+                 testSetupError.textContent = 'Could not select any topics for testing (perhaps none are due or available?). Try adjusting criteria.';
                  testSetupError.classList.remove('hidden');
                  return;
             }
@@ -1597,8 +1451,8 @@
             const knot = getKnotById(currentKnotInfo.id);
 
             if (!knot) {
-                console.error(`Knot with ID ${currentKnotInfo.id} not found during test.`);
-                showToast("Error: Could not load the next knot.", "error");
+                console.error(`Topic with ID ${currentKnotInfo.id} not found during test.`);
+                showToast("Error: Could not load the next topic.", "error");
                 currentTestSession.currentIndex++;
                 saveTestSessionState();
                 displayCurrentTestKnot(); // Try next one
@@ -1607,7 +1461,6 @@
 
             testProgressSpan.textContent = `${currentTestSession.currentIndex + 1}/${currentTestSession.totalKnots}`;
             testKnotNameH3.textContent = knot.name;
-            testKnotAlternateP.textContent = knot.alternateNames && knot.alternateNames.length > 0 ? `(${knot.alternateNames.join(', ')})` : '';
 
             testAnswerArea.classList.add('hidden');
             testKnotMediaDiv.innerHTML = '';
@@ -1789,7 +1642,7 @@
             statMasteredKnots.textContent = masteredKnots;
             statDueToday.textContent = dueKnots.length;
 
-            // Challenging knots
+            // Challenging topics
             const sortedByEase = [...knotDatabase]
                                 .filter(k => k.learning)
                                 .sort((a, b) => a.learning.easeFactor - b.learning.easeFactor);
@@ -1803,23 +1656,6 @@
                  });
             } else {
                  statChallengingKnots.innerHTML = '<li>No learning data yet.</li>';
-            }
-
-            // Progress by category
-            const categories = [...new Set(knotDatabase.map(k => k.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-            statCategoryProgress.innerHTML = '';
-            if (categories.length > 0) {
-                categories.forEach(cat => {
-                     const knotsInCategory = knotDatabase.filter(k => k.category === cat);
-                     const masteredInCategory = knotsInCategory.filter(k => k.learning && k.learning.easeFactor >= 2.8).length;
-                     const totalInCategory = knotsInCategory.length;
-                     const percentageMastered = totalInCategory > 0 ? ((masteredInCategory / totalInCategory) * 100).toFixed(0) : 0;
-                     const p = document.createElement('p');
-                     p.innerHTML = `<strong class="font-medium">${cat}:</strong> ${masteredInCategory}/${totalInCategory} mastered (${percentageMastered}%)`;
-                     statCategoryProgress.appendChild(p);
-                });
-            } else {
-                 statCategoryProgress.innerHTML = '<p>No categories defined yet.</p>';
             }
 
             // Render Chart
@@ -2432,22 +2268,12 @@
             // Knot Browser Filters/Sort
             searchInput.addEventListener('input', renderKnotBrowser);
             filterLevelSelect.addEventListener('change', renderKnotBrowser);
-            filterCategorySelect.addEventListener('change', renderKnotBrowser);
             sortBySelect.addEventListener('change', renderKnotBrowser);
 
-            // Knot Detail View
+            // Topic Detail View
             backToBrowserButton.addEventListener('click', () => navigateTo('browser'));
             backToBrowserBottomButton.addEventListener('click', () => navigateTo('browser'));
              // Edit/Delete buttons attached in renderKnotDetail
-
-            // Add/Edit Knot Form
-            knotForm.addEventListener('submit', handleKnotFormSubmit);
-            addMediaUrlButton.addEventListener('click', () => addMediaUrlRow()); // Add blank row on button click
-            cancelKnotFormButton.addEventListener('click', () => {
-                resetKnotForm(); // Clear form state
-                navigateTo('browser');
-            });
-             // Remove button listeners added dynamically
 
              // Test Mode Setup
              startTestButton.addEventListener('click', startTest);
