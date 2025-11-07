@@ -1,0 +1,2544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description" content="A progressive web app for learning and testing knots">
+    <link rel="manifest" href="/KnotPractice/manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <title>Knot Testing App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <style>
+        @font-face {
+            font-family: 'LucideIcons';
+            src: url(https://unpkg.com/lucide-static@latest/font/Lucide.ttf) format('truetype');
+        }
+      .lucide {
+        font-family: 'LucideIcons';
+        font-size: 1.25rem;
+        line-height: 1;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-style: normal;
+        font-weight: normal;
+        speak: none;
+        display: inline-block;
+        text-decoration: inherit;
+        text-transform: none;
+        text-rendering: optimizeLegibility;
+        white-space: nowrap;
+        word-wrap: normal;
+        direction: ltr;
+        vertical-align: middle; /* Align icons better with text */
+      }
+      /* Icon content mapping (Ensure these codes match the font version) */
+      .icon-home::before { content: "\f0155"; }
+      .icon-plus::before { content: "\f01e1"; }
+      .icon-edit::before { content: "\f010e"; }
+      .icon-trash::before { content: "\f02c1"; }
+      .icon-list::before { content: "\f018f"; }
+      .icon-test-tube::before { content: "\f02b8"; }
+      .icon-upload::before { content: "\f02da"; }
+      .icon-download::before { content: "\f0101"; }
+      .icon-bar-chart::before { content: "\f0055"; }
+      .icon-eye::before { content: "\f0119"; }
+      .icon-check::before { content: "\f00b2"; }
+      .icon-x::before { content: "\f02e9"; }
+      .icon-info::before { content: "\f0167"; }
+      .icon-chevron-left::before { content: "\f00b9"; }
+      .icon-chevron-right::before { content: "\f00ba"; }
+      .icon-search::before { content: "\f0211"; }
+      .icon-filter::before { content: "\f012b"; }
+      .icon-sort-asc::before { content: "\f0270"; }
+      .icon-sort-desc::before { content: "\f0271"; }
+      .icon-save::before { content: "\f0209"; }
+      .icon-rotate-ccw::before { content: "\f0200"; }
+      .icon-book-open::before { content: "\f0075"; }
+      .icon-menu::before { content: "\f0197"; }
+
+      /* Mobile menu styles */
+      @media (max-width: 768px) {
+        #main-nav {
+          max-height: 0;
+        }
+        #main-nav.expanded {
+          max-height: 300px;
+        }
+      }
+
+      /* Basic loading spinner */
+      .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border-left-color: #2563eb; /* blue-600 */
+        animation: spin 1s ease infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      /* Custom styles for better mobile experience */
+      body {
+        -webkit-tap-highlight-color: transparent; /* Disable tap highlight */
+      }
+      /* Ensure buttons are easily tappable */
+      button, .button-like {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0.5rem 1rem;
+      }
+       /* Style for media placeholders */
+      .media-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #e5e7eb; /* gray-200 */
+        color: #6b7280; /* gray-500 */
+        border-radius: 0.375rem; /* rounded-md */
+        min-height: 150px;
+      }
+      /* Style for embedded videos */
+       .video-container {
+        position: relative;
+        padding-bottom: 56.25%; /* 16:9 aspect ratio */
+        height: 0;
+        overflow: hidden;
+        max-width: 100%;
+        background: #000;
+        border-radius: 0.375rem; /* rounded-md */
+      }
+      .video-container iframe,
+      .video-container object,
+      .video-container embed {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      /* Style for active nav button */
+      .nav-button.active {
+            background-color: #1d4ed8; /* darker blue for active */
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+      }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      // Basic Tailwind config
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+          }
+        }
+      }
+
+      // Register Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/KnotPractice/service-worker.js')
+            .then(registration => {
+              console.log('ServiceWorker registration successful');
+            })
+            .catch(err => {
+              console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+      }
+    </script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-blue-600 text-white p-3 shadow-md sticky top-0 z-20">
+        <div class="container mx-auto max-w-4xl flex justify-between items-center">
+            <h1 class="text-xl font-bold">Knot Testing App</h1>
+            <button id="menu-toggle" class="md:hidden p-2 rounded hover:bg-blue-700 transition-colors">
+                <img src="https://unpkg.com/lucide-static@latest/icons/menu.svg" alt="menu icon" class="w-6 h-6" />
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto p-4 max-w-4xl">
+
+        <nav id="main-nav" class="bg-white rounded-lg shadow p-2 mb-4 overflow-hidden transition-all duration-300 md:sticky md:top-[60px] md:z-10">
+            <div class="flex flex-col md:flex-row md:flex-wrap md:justify-center md:gap-2">
+                <button data-section="browser" class="nav-button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out mb-2 md:mb-0">
+                    <img src="https://unpkg.com/lucide-static@latest/icons/list.svg" alt="list icon" /> Browse
+                </button>
+                <button data-section="add-knot" class="nav-button bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out mb-2 md:mb-0">
+                    <img src="https://unpkg.com/lucide-static@latest/icons/plus.svg" alt="plus icon" /> Add Knot
+                </button>
+                <button data-section="test-mode" class="nav-button bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out mb-2 md:mb-0">
+                    <img src="https://unpkg.com/lucide-static@latest/icons/test-tube.svg" alt="test tube icon" /> Test
+                </button>
+                <button data-section="progress" class="nav-button bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out mb-2 md:mb-0">
+                    <img src="https://unpkg.com/lucide-static@latest/icons/chart-no-axes-combined.svg" alt="chart-no-axes-combined icon" /> Stats
+                </button>
+                <button data-section="import-export" class="nav-button bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out mb-2 md:mb-0">
+                    <img src="https://unpkg.com/lucide-static@latest/icons/download.svg" alt="download icon" />
+                    <img src="https://unpkg.com/lucide-static@latest/icons/upload.svg" alt="upload icon" /> I/O
+                </button>
+            </div>
+        </nav>
+
+        <div id="app-content">
+
+            <section id="browser" class="app-section bg-white rounded-lg shadow p-4 md:p-6 hidden">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2">Knot Browser</h2>
+                <div class="flex flex-wrap gap-4 mb-4 items-end">
+                    <div class="flex-grow min-w-[150px]">
+                        <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                        <div class="relative rounded-md shadow-sm">
+                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <img src="https://unpkg.com/lucide-static@latest/icons/search.svg" alt="search icon" />
+                            </div>
+                            <input type="search" id="search-input" placeholder="Search by name..." class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="filter-level" class="block text-sm font-medium text-gray-700 mb-1">Level</label>
+                        <select id="filter-level" class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="all">All Levels</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filter-category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <select id="filter-category" class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="all">All Categories</option>
+                            </select>
+                    </div>
+                    <div>
+                        <label for="sort-by" class="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                        <select id="sort-by" class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="name-asc">Name (A-Z)</option>
+                            <option value="name-desc">Name (Z-A)</option>
+                            <option value="level-asc">Level (Low-High)</option>
+                            <option value="level-desc">Level (High-Low)</option>
+                            <option value="next-review-asc">Next Review (Soonest)</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="knot-list" class="space-y-3">
+                    <p class="text-gray-500">No knots found. Add some knots or check your filters!</p>
+                </div>
+            </section>
+
+            <section id="knot-detail" class="app-section bg-white rounded-lg shadow p-4 md:p-6 hidden">
+                 <button id="back-to-browser" class="mb-4 text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm">
+                    <img src="https://unpkg.com/lucide-static@latest/icons/chevron-left.svg" alt="chevron left icon" /> Back to Browser
+                 </button>
+                <div id="knot-detail-content">
+                    </div>
+                 <div class="mt-4 pt-4 border-t flex gap-2">
+                     <button id="edit-knot-from-detail" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out">
+                        <img src="https://unpkg.com/lucide-static@latest/icons/pencil.svg" alt="pencil icon" /> Edit
+                    </button>
+                     <button id="delete-knot-from-detail" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out">
+                        <img src="https://unpkg.com/lucide-static@latest/icons/trash.svg" alt="trash icon" /> Delete
+                    </button>
+                 </div>
+                 <div class="mt-4">
+                    <button id="back-to-browser-bottom" class="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm">
+                        <img src="https://unpkg.com/lucide-static@latest/icons/chevron-left.svg" alt="chevron left icon" /> Back to Browser
+                    </button>
+                 </div>
+            </section>
+
+            <section id="add-knot" class="app-section bg-white rounded-lg shadow p-4 md:p-6 hidden">
+                <h2 id="knot-form-title" class="text-lg font-semibold mb-4 border-b pb-2">Add New Knot</h2>
+                <form id="knot-form" class="space-y-4">
+                    <input type="hidden" id="knot-id">
+                    <div>
+                        <label for="knot-name" class="block text-sm font-medium text-gray-700">Name *</label>
+                        <input type="text" id="knot-name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="knot-alternate-names" class="block text-sm font-medium text-gray-700">Alternate Names (comma-separated)</label>
+                        <input type="text" id="knot-alternate-names" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="knot-description" class="block text-sm font-medium text-gray-700">Description *</label>
+                        <textarea id="knot-description" rows="3" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                    </div>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="knot-level" class="block text-sm font-medium text-gray-700">Tying Level (1-4) *</label>
+                            <select id="knot-level" required class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <option value="1">1 (Type1 - Hard)</option>
+                                <option value="2">2 (Type2 - Medium)</option>
+                                <option value="3">3 (Type3 - Begginer)</option>
+                                <option value="4">4 (Type4 - Easy)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="knot-category" class="block text-sm font-medium text-gray-700">Category *</label>
+                            <input type="text" id="knot-category" list="category-suggestions" required placeholder="e.g., hitch, bend, loop" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                             <datalist id="category-suggestions">
+                                <option value="knot"></option>
+                                <option value="hitch"></option>
+                                <option value="bend"></option>
+                                <option value="loop"></option>
+                                <option value="stopper"></option>
+                                <option value="binding"></option>
+                                <option value="decorative"></option>
+                            </datalist>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="knot-url" class="block text-sm font-medium text-gray-700">Reference URL</label>
+                        <input type="url" id="knot-url" placeholder="https://example.com/knot-info" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+
+                    <fieldset class="border p-4 rounded-md">
+                        <legend class="text-sm font-medium text-gray-700 px-1">Media Resources (URLs)</legend>
+                        <div id="media-url-inputs" class="space-y-3">
+                            </div>
+                        <button type="button" id="add-media-url" class="mt-2 text-sm text-blue-600 hover:text-blue-800">+ Add another URL</button>
+                    </fieldset>
+
+                    <div class="flex justify-end gap-2 pt-4 border-t">
+                         <button type="button" id="cancel-knot-form" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg text-sm transition duration-150 ease-in-out">Cancel</button>
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out">
+                            <img src="https://unpkg.com/lucide-static@latest/icons/save.svg" alt="save icon" /> <span id="knot-form-submit-text">Save Knot</span>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section id="test-mode" class="app-section bg-white rounded-lg shadow p-4 md:p-6 hidden">
+                <div id="test-setup" class="space-y-4">
+                    <h2 class="text-lg font-semibold mb-4 border-b pb-2">Setup Test Session</h2>
+                     <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Select Levels to Test:</label>
+                        <div class="flex flex-wrap gap-x-4 gap-y-2">
+                            <label class="inline-flex items-center"><input type="checkbox" class="test-level-checkbox rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50" value="1" checked> <span class="ml-2">Level 1</span></label>
+                            <label class="inline-flex items-center"><input type="checkbox" class="test-level-checkbox rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50" value="2" checked> <span class="ml-2">Level 2</span></label>
+                            <label class="inline-flex items-center"><input type="checkbox" class="test-level-checkbox rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50" value="3" checked> <span class="ml-2">Level 3</span></label>
+                            <label class="inline-flex items-center"><input type="checkbox" class="test-level-checkbox rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50" value="4" checked> <span class="ml-2">Level 4</span></label>
+                        </div>
+                    </div>
+                     <div>
+                        <label for="test-category" class="block text-sm font-medium text-gray-700">Select Category:</label>
+                        <select id="test-category" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="all">All Categories</option>
+                            </select>
+                    </div>
+                     <div>
+                        <label for="test-knot-count" class="block text-sm font-medium text-gray-700">Number of Knots:</label>
+                        <input type="number" id="test-knot-count" value="10" min="1" max="50" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <p class="text-xs text-gray-500 mt-1">Max 50. Includes due knots + random selection.</p>
+                    </div>
+                     <div class="flex justify-end gap-2 pt-4 border-t">
+                        <button id="start-test-button" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out">
+                            <img src="https://unpkg.com/lucide-static@latest/icons/test-tube.svg" alt="test tube icon" /> Start Test
+                        </button>
+                    </div>
+                    <div id="test-setup-error" class="text-red-600 text-sm mt-2 hidden"></div>
+                </div>
+
+                <div id="test-interface" class="hidden space-y-4">
+                    <div class="flex justify-between items-center border-b pb-2">
+                         <h2 class="text-lg font-semibold">Testing Knot: <span id="test-progress">1/10</span></h2>
+                         <button id="end-test-button" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-1 px-3 rounded-lg text-xs transition duration-150 ease-in-out">End Session</button>
+                    </div>
+
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <p class="text-sm text-gray-600">Attempt to tie the:</p>
+                        <h3 id="test-knot-name" class="text-2xl md:text-3xl font-bold my-2">Knot Name</h3>
+                        <p id="test-knot-alternate" class="text-sm text-gray-500 italic"></p>
+                    </div>
+
+                    <div id="test-answer-area" class="hidden bg-blue-50 p-4 rounded-lg border border-blue-200 space-y-3">
+                        <h4 class="font-semibold text-blue-800">Instructions / Media:</h4>
+                        <div id="test-knot-media" class="space-y-2">
+                            </div>
+                         <p id="test-knot-description" class="text-sm text-gray-700"></p>
+                         <a id="test-knot-ref-link" href="#" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 text-sm inline-flex items-center gap-1 hidden">
+                             Reference Link <img src="https://unpkg.com/lucide-static@latest/icons/book-open.svg" alt="book open icon" />
+                         </a>
+                    </div>
+
+                    <div id="test-actions" class="flex flex-col sm:flex-row justify-center gap-4 pt-4 border-t">
+                         <button id="reveal-answer-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-1 transition duration-150 ease-in-out">
+                            <img src="https://unpkg.com/lucide-static@latest/icons/eye.svg" alt="eye icon" /> Reveal Answer (R)
+                        </button>
+                         <button id="fail-button" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-1 transition duration-150 ease-in-out hidden">
+                            <img src="https://unpkg.com/lucide-static@latest/icons/x.svg" alt="x icon" /> Failed (F)
+                        </button>
+                         <button id="success-button" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-1 transition duration-150 ease-in-out hidden">
+                            <img src="https://unpkg.com/lucide-static@latest/icons/check.svg" alt="check icon" /> Success (S)
+                        </button>
+                    </div>
+                     <p class="text-xs text-center text-gray-500">Keyboard shortcuts: (R)eveal, (F)ail, (S)uccess</p>
+                </div>
+
+                 <div id="test-summary" class="hidden space-y-4">
+                     <h2 class="text-lg font-semibold mb-4 border-b pb-2">Test Session Summary</h2>
+                     <p>Session Complete!</p>
+                     <p>Score: <span id="summary-score" class="font-bold">0/0</span> (<span id="summary-percentage" class="font-bold">0%</span>)</p>
+                     <div id="summary-details">
+                        </div>
+                     <div class="flex justify-center gap-2 pt-4 border-t">
+                         <button data-section="test-mode" class="nav-button bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out">
+                            <img src="https://unpkg.com/lucide-static@latest/icons/rotate-ccw.svg" alt="rotate ccw icon" /> Test Again
+                        </button>
+                         <button data-section="browser" class="nav-button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out">
+                            <img src="https://unpkg.com/lucide-static@latest/icons/list.svg" alt="list icon" /> Back to Browser
+                        </button>
+                     </div>
+                </div>
+            </section>
+
+            <section id="progress" class="app-section bg-white rounded-lg shadow p-4 md:p-6 hidden">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2">Progress Overview</h2>
+                <div class="space-y-6"> <div>
+                        <h3 class="font-medium text-gray-800 mb-2">Overall Stats</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                             <p><strong class="font-semibold text-gray-700">Total Knots:</strong> <span id="stat-total-knots">0</span></p>
+                             <p><strong class="font-semibold text-gray-700">Mastered:</strong> <span id="stat-mastered-knots">0</span></p>
+                             <p><strong class="font-semibold text-gray-700">Due Today:</strong> <span id="stat-due-today">0</span></p>
+                        </div>
+                    </div>
+                     <div>
+                        <h3 class="font-medium text-gray-800 mb-2">Most Challenging Knots (Lowest Ease Factor)</h3>
+                        <ul id="stat-challenging-knots" class="list-disc list-inside text-sm text-gray-600 space-y-1">
+                            <li>No data yet.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-800 mb-2">Progress by Category</h3>
+                        <div id="stat-category-progress" class="text-sm text-gray-600 space-y-1">
+                             <p>No data yet.</p>
+                        </div>
+                    </div>
+                     <div>
+                        <h3 class="font-medium text-gray-800 mb-2">Historical Performance (% Correct per Day)</h3>
+                        <div class="bg-gray-50 p-4 rounded-md border">
+                             <canvas id="progress-chart" class="max-w-full"></canvas>
+                             <p id="chart-message" class="text-center text-sm text-gray-500 mt-2 hidden">No historical test data yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="import-export" class="app-section bg-white rounded-lg shadow p-4 md:p-6 hidden">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2">Import / Export Data</h2>
+
+                <div class="mb-6 pb-6 border-b">
+                    <h3 class="font-medium mb-2">Export Knots</h3>
+                    <p class="text-sm text-gray-600 mb-3">Export all your knot data and optionally your learning progress to a JSON file.</p>
+                    <div class="mb-3">
+                         <label class="inline-flex items-center">
+                            <input type="checkbox" id="export-include-progress" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200 focus:ring-opacity-50" checked>
+                            <span class="ml-2 text-sm text-gray-700">Include Learning Progress Data</span>
+                        </label>
+                    </div>
+                    <button id="export-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out">
+                        <img src="https://unpkg.com/lucide-static@latest/icons/download.svg" alt="download icon" /> Export Data
+                    </button>
+                </div>
+
+                <div>
+                    <h3 class="font-medium mb-2">Import Knots</h3>
+                    <p class="text-sm text-red-600 mb-3 font-semibold">Warning: Importing will replace ALL current knot and progress data.</p>
+                    
+                    <div class="flex mb-2">
+                        <button id="import-local-tab" class="px-4 py-2 border-b-2 border-blue-500 font-medium text-sm text-blue-600">From Local File</button>
+                        <button id="import-url-tab" class="px-4 py-2 border-b-2 border-gray-200 font-medium text-sm text-gray-500">From URL</button>
+                    </div>
+                    
+                    <div id="import-local-section">
+                        <p class="text-sm text-gray-600 mb-3">Select a previously exported JSON file to import.</p>
+                        <input type="file" id="import-file" accept=".json" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-3">
+                    </div>
+                    
+                    <div id="import-url-section" class="hidden">
+                        <p class="text-sm text-gray-600 mb-3">Enter a URL to a JSON file to import.</p>
+                        <div class="flex mb-3">
+                            <input type="url" id="import-url" placeholder="https://example.com/knots.json" class="block w-full px-3 py-2 border border-gray-300 rounded-l-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <button id="import-url-validate" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-r-md border border-gray-300 border-l-0 text-sm transition duration-150 ease-in-out">
+                                Validate
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-3">
+                          <span class="font-medium">Tip:</span> Google Drive share links are supported! Make sure your file is set to "Anyone with the link can view".
+                        </p>
+                        <div id="import-url-preview" class="hidden mb-3 p-3 bg-gray-50 border rounded-md text-sm">
+                            <div class="flex justify-between">
+                                <p class="font-medium">URL Content Preview:</p>
+                                <p id="import-url-size"></p>
+                            </div>
+                            <p id="import-url-knot-count" class="text-gray-600"></p>
+                        </div>
+                    </div>
+                    
+                    <button id="import-button" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out disabled:opacity-50" disabled>
+                        <img src="https://unpkg.com/lucide-static@latest/icons/upload.svg" alt="upload icon" /> Import Data
+                    </button>
+                     <p id="import-status" class="text-sm mt-2"></p>
+                </div>
+                 <div class="mt-6 pt-6 border-t">
+                    <h3 class="font-medium mb-2 text-red-700">Reset Data</h3>
+                    <p class="text-sm text-gray-600 mb-3">Permanently delete all knots and progress data.</p>
+                    <button id="reset-all-data-button" class="bg-red-600 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-1 text-sm transition duration-150 ease-in-out">
+                        <img src="https://unpkg.com/lucide-static@latest/icons/trash.svg" alt="trash icon" /> Reset All Data
+                    </button>
+                </div>
+            </section>
+
+             <div id="loading-indicator" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="spinner"></div>
+            </div>
+
+             <div id="toast-message" class="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm z-[60] hidden transition-opacity duration-300">
+                Message goes here
+            </div>
+
+        </div> </main>
+
+    <footer class="text-center text-xs text-gray-500 p-4 mt-auto">
+        Knot Testing App | Client-Side Storage
+    </footer>
+
+    <script>
+        // --- Constants ---
+        const KNOT_DB_KEY = 'knotApp_knots';
+        const HISTORY_DB_KEY = 'knotApp_history'; // Key for storing historical test data
+        const DEFAULT_EASE_FACTOR = 2.5;
+        const MIN_EASE_FACTOR = 1.3;
+        const MAX_EASE_FACTOR = 3.0;
+        const REVIEW_INTERVAL_BASE_1 = 1; // 1 day
+        const REVIEW_INTERVAL_BASE_2 = 3; // 3 days
+        const DAILY_REVIEW_LIMIT = 20;
+        const RANDOM_KNOT_RATIO = 0.2;
+        const SESSION_STORAGE_KEY = 'knotApp_testSession';
+
+        // --- DOM Elements ---
+        const sections = document.querySelectorAll('.app-section');
+        const navButtons = document.querySelectorAll('.nav-button');
+        const appContent = document.getElementById('app-content');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const toastMessage = document.getElementById('toast-message');
+        const menuToggle = document.getElementById('menu-toggle');
+        const mainNav = document.getElementById('main-nav');
+
+        // Knot Browser Elements
+        const knotListContainer = document.getElementById('knot-list');
+        const searchInput = document.getElementById('search-input');
+        const filterLevelSelect = document.getElementById('filter-level');
+        const filterCategorySelect = document.getElementById('filter-category');
+        const sortBySelect = document.getElementById('sort-by');
+
+        // Knot Detail Elements
+        const knotDetailSection = document.getElementById('knot-detail');
+        const knotDetailContent = document.getElementById('knot-detail-content');
+        const backToBrowserButton = document.getElementById('back-to-browser');
+        const backToBrowserBottomButton = document.getElementById('back-to-browser-bottom');
+        const editKnotFromDetailButton = document.getElementById('edit-knot-from-detail');
+        const deleteKnotFromDetailButton = document.getElementById('delete-knot-from-detail');
+
+        // Add/Edit Knot Form Elements
+        const knotForm = document.getElementById('knot-form');
+        const knotFormTitle = document.getElementById('knot-form-title');
+        const knotIdInput = document.getElementById('knot-id');
+        const knotNameInput = document.getElementById('knot-name');
+        const knotAlternateNamesInput = document.getElementById('knot-alternate-names');
+        const knotDescriptionInput = document.getElementById('knot-description');
+        const knotLevelSelect = document.getElementById('knot-level');
+        const knotCategoryInput = document.getElementById('knot-category');
+        const knotUrlInput = document.getElementById('knot-url');
+        const mediaUrlInputsContainer = document.getElementById('media-url-inputs');
+        const addMediaUrlButton = document.getElementById('add-media-url');
+        const cancelKnotFormButton = document.getElementById('cancel-knot-form');
+        const knotFormSubmitText = document.getElementById('knot-form-submit-text');
+
+        // Test Mode Elements
+        const testSetupSection = document.getElementById('test-setup');
+        const testInterfaceSection = document.getElementById('test-interface');
+        const testSummarySection = document.getElementById('test-summary');
+        const testLevelCheckboxes = document.querySelectorAll('.test-level-checkbox');
+        const testCategorySelect = document.getElementById('test-category');
+        const testKnotCountInput = document.getElementById('test-knot-count');
+        const startTestButton = document.getElementById('start-test-button');
+        const testSetupError = document.getElementById('test-setup-error');
+        const testProgressSpan = document.getElementById('test-progress');
+        const endTestButton = document.getElementById('end-test-button');
+        const testKnotNameH3 = document.getElementById('test-knot-name');
+        const testKnotAlternateP = document.getElementById('test-knot-alternate');
+        const testAnswerArea = document.getElementById('test-answer-area');
+        const testKnotMediaDiv = document.getElementById('test-knot-media');
+        const testKnotDescriptionP = document.getElementById('test-knot-description');
+        const testKnotRefLink = document.getElementById('test-knot-ref-link');
+        const testActionsDiv = document.getElementById('test-actions');
+        const revealAnswerButton = document.getElementById('reveal-answer-button');
+        const failButton = document.getElementById('fail-button');
+        const successButton = document.getElementById('success-button');
+        const summaryScoreSpan = document.getElementById('summary-score');
+        const summaryPercentageSpan = document.getElementById('summary-percentage');
+        const summaryDetailsDiv = document.getElementById('summary-details');
+
+        // Progress Elements
+        const statTotalKnots = document.getElementById('stat-total-knots');
+        const statMasteredKnots = document.getElementById('stat-mastered-knots');
+        const statDueToday = document.getElementById('stat-due-today');
+        const statChallengingKnots = document.getElementById('stat-challenging-knots');
+        const statCategoryProgress = document.getElementById('stat-category-progress');
+        const progressChartCanvas = document.getElementById('progress-chart');
+        const chartMessage = document.getElementById('chart-message');
+
+
+        // Import/Export Elements
+        const exportIncludeProgressCheckbox = document.getElementById('export-include-progress');
+        const exportButton = document.getElementById('export-button');
+        const importFileInput = document.getElementById('import-file');
+        const importButton = document.getElementById('import-button');
+        const importStatusP = document.getElementById('import-status');
+        const resetAllDataButton = document.getElementById('reset-all-data-button');
+        
+        // URL Import Elements
+        const importLocalTab = document.getElementById('import-local-tab');
+        const importUrlTab = document.getElementById('import-url-tab');
+        const importLocalSection = document.getElementById('import-local-section');
+        const importUrlSection = document.getElementById('import-url-section');
+        const importUrlInput = document.getElementById('import-url');
+        const importUrlValidateButton = document.getElementById('import-url-validate');
+        const importUrlPreview = document.getElementById('import-url-preview');
+        const importUrlSize = document.getElementById('import-url-size');
+        const importUrlKnotCount = document.getElementById('import-url-knot-count');
+
+        // Current import source (file or url)
+        let currentImportSource = 'file';
+        let validatedUrlData = null;
+
+        // --- State ---
+        let knotDatabase = []; // Array of knot objects
+        let historicalData = []; // Array of { date: 'YYYY-MM-DD', correct: N, total: M }
+        let currentView = 'browser';
+        let currentTestSession = null; // Holds state for ongoing test
+        let progressChartInstance = null; // Holds the Chart.js instance
+
+        // --- Utility Functions ---
+
+        /**
+         * Generates a simple unique ID.
+         * @returns {string} A unique identifier.
+         */
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+        }
+
+        /**
+         * Shows a loading indicator.
+         */
+        function showLoading() {
+            loadingIndicator.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the loading indicator.
+         */
+        function hideLoading() {
+            loadingIndicator.classList.add('hidden');
+        }
+
+         /**
+         * Displays a short-lived toast message.
+         * @param {string} message - The message to display.
+         * @param {string} type - 'success', 'error', or 'info' (affects background).
+         */
+        let toastTimeout;
+        function showToast(message, type = 'info') {
+            toastMessage.textContent = message;
+            toastMessage.classList.remove('hidden', 'bg-gray-800', 'bg-green-600', 'bg-red-600', 'opacity-0'); // Clear previous styles and ensure visible
+            toastMessage.classList.add('opacity-100'); // Ensure opacity is set
+
+            if (type === 'success') {
+                toastMessage.classList.add('bg-green-600');
+            } else if (type === 'error') {
+                toastMessage.classList.add('bg-red-600');
+            } else {
+                toastMessage.classList.add('bg-gray-800');
+            }
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                 toastMessage.classList.remove('opacity-100');
+                 toastMessage.classList.add('opacity-0');
+                 setTimeout(() => toastMessage.classList.add('hidden'), 300); // Hide after fade out
+            }, 3000); // Display for 3 seconds
+        }
+
+        /**
+         * Gets the current date as 'YYYY-MM-DD'.
+         * @returns {string} Today's date string.
+         */
+        function getTodayDateString() {
+            const today = new Date();
+            const offset = today.getTimezoneOffset();
+            const localToday = new Date(today.getTime() - (offset * 60 * 1000));
+            return localToday.toISOString().split('T')[0];
+        }
+
+        /**
+         * Adds days to a given date string.
+         * @param {string} dateString - Start date ('YYYY-MM-DD').
+         * @param {number} days - Number of days to add.
+         * @returns {string} New date string ('YYYY-MM-DD').
+         */
+        function addDaysToDate(dateString, days) {
+            const date = new Date(dateString + 'T00:00:00Z'); // Treat as UTC to avoid timezone issues with date math
+            date.setUTCDate(date.getUTCDate() + days);
+            return date.toISOString().split('T')[0];
+        }
+
+        /**
+         * Parses a date string ('YYYY-MM-DD') into a Date object (UTC).
+         * @param {string|null} dateString - Date string ('YYYY-MM-DD') or null.
+         * @returns {Date|null} Parsed Date object (UTC) or null.
+         */
+        function parseDateString(dateString) {
+            if (!dateString) return null;
+            try {
+                // Ensure it's treated as YYYY-MM-DD in UTC to prevent timezone shifts
+                const date = new Date(dateString + 'T00:00:00Z');
+                // Check if the constructed date is valid and matches the input year/month/day
+                if (isNaN(date.getTime()) || date.toISOString().split('T')[0] !== dateString) {
+                   console.warn("Invalid date string encountered:", dateString);
+                   return null;
+                }
+                return date;
+            } catch (e) {
+                console.error("Error parsing date string:", dateString, e);
+                return null;
+            }
+        }
+
+
+        // --- Data Management ---
+
+        /**
+         * Loads knots from localStorage.
+         */
+        function loadKnots() {
+            // No loading indicator here, called during init which has one
+            try {
+                const storedKnots = localStorage.getItem(KNOT_DB_KEY);
+                if (storedKnots) {
+                    knotDatabase = JSON.parse(storedKnots);
+                    // Ensure all knots have the necessary learning data structure
+                    knotDatabase.forEach(knot => ensureLearningData(knot));
+                } else {
+                    knotDatabase = [];
+                }
+                console.log(`Loaded ${knotDatabase.length} knots.`);
+            } catch (error) {
+                console.error("Error loading knots from localStorage:", error);
+                knotDatabase = [];
+                showToast("Error loading knot data. Data might be corrupted.", "error");
+                localStorage.removeItem(KNOT_DB_KEY); // Clear corrupted data
+            }
+        }
+
+        /**
+         * Loads historical test data from localStorage.
+         */
+        function loadHistory() {
+             // No loading indicator here, called during init which has one
+            try {
+                const storedHistory = localStorage.getItem(HISTORY_DB_KEY);
+                if (storedHistory) {
+                    historicalData = JSON.parse(storedHistory);
+                    // Optional: Validate historical data structure here
+                    if (!Array.isArray(historicalData)) {
+                        console.warn("Historical data is not an array, resetting.");
+                        historicalData = [];
+                        localStorage.removeItem(HISTORY_DB_KEY);
+                    } else {
+                        // Ensure dates are valid etc.
+                        historicalData = historicalData.filter(item =>
+                            item && typeof item.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.date) &&
+                            typeof item.correct === 'number' && typeof item.total === 'number' && item.total >= item.correct
+                        );
+                    }
+                } else {
+                    historicalData = [];
+                }
+                console.log(`Loaded ${historicalData.length} historical records.`);
+            } catch (error) {
+                console.error("Error loading history from localStorage:", error);
+                historicalData = [];
+                showToast("Error loading history data. Data might be corrupted.", "error");
+                localStorage.removeItem(HISTORY_DB_KEY); // Clear corrupted data
+            }
+        }
+
+
+        /**
+         * Saves knots to localStorage.
+         */
+        function saveKnots() {
+            try {
+                localStorage.setItem(KNOT_DB_KEY, JSON.stringify(knotDatabase));
+                 console.log(`Saved ${knotDatabase.length} knots.`);
+            } catch (error) {
+                console.error("Error saving knots to localStorage:", error);
+                showToast("Error saving knot data. Changes might not persist.", "error");
+            }
+        }
+
+        /**
+         * Saves historical test data to localStorage.
+         */
+        function saveHistory() {
+            try {
+                localStorage.setItem(HISTORY_DB_KEY, JSON.stringify(historicalData));
+                console.log(`Saved ${historicalData.length} historical records.`);
+            } catch (error) {
+                console.error("Error saving history to localStorage:", error);
+                showToast("Error saving history data.", "error");
+            }
+        }
+
+         /**
+         * Adds a daily summary to the historical data. Aggregates if entry for today already exists.
+         * @param {number} correctCount - Number of correct answers in the session.
+         * @param {number} totalAttempted - Total knots attempted in the session.
+         */
+        function addHistoricalRecord(correctCount, totalAttempted) {
+            if (totalAttempted <= 0) return; // Don't record empty sessions
+
+            const todayStr = getTodayDateString();
+            const existingEntryIndex = historicalData.findIndex(entry => entry.date === todayStr);
+
+            if (existingEntryIndex !== -1) {
+                // Update existing entry for today
+                historicalData[existingEntryIndex].correct += correctCount;
+                historicalData[existingEntryIndex].total += totalAttempted;
+            } else {
+                // Add new entry for today
+                historicalData.push({ date: todayStr, correct: correctCount, total: totalAttempted });
+            }
+             // Keep history sorted by date (optional but good for charting)
+             historicalData.sort((a, b) => a.date.localeCompare(b.date));
+            saveHistory();
+        }
+
+
+        /**
+         * Ensures a knot object has the required learning data fields.
+         * @param {object} knot - The knot object.
+         */
+        function ensureLearningData(knot) {
+            if (!knot.learning) {
+                knot.learning = {};
+            }
+            if (typeof knot.learning.easeFactor !== 'number' || isNaN(knot.learning.easeFactor) || knot.learning.easeFactor < MIN_EASE_FACTOR) {
+                knot.learning.easeFactor = DEFAULT_EASE_FACTOR;
+            }
+             if (typeof knot.learning.interval !== 'number' || isNaN(knot.learning.interval)) {
+                knot.learning.interval = 0;
+            }
+            if (typeof knot.learning.consecutiveCorrect !== 'number' || isNaN(knot.learning.consecutiveCorrect)) {
+                knot.learning.consecutiveCorrect = 0;
+            }
+            if (typeof knot.learning.nextReviewDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(knot.learning.nextReviewDate)) {
+                 knot.learning.nextReviewDate = (knot.learning.interval > 0) ? addDaysToDate(getTodayDateString(), knot.learning.interval) : getTodayDateString();
+            }
+        }
+
+
+        /**
+         * Adds a new knot to the database.
+         * @param {object} knotData - The knot data object (without ID).
+         */
+        function addKnot(knotData) {
+            const newKnot = {
+                ...knotData,
+                id: generateId(),
+                learning: {
+                    nextReviewDate: getTodayDateString(),
+                    interval: 0,
+                    easeFactor: DEFAULT_EASE_FACTOR,
+                    consecutiveCorrect: 0
+                }
+            };
+            knotDatabase.push(newKnot);
+            saveKnots();
+            showToast(`Knot "${newKnot.name}" added successfully!`, "success");
+            renderKnotBrowser();
+            populateCategoryFilters(); // Update filters
+        }
+
+        /**
+         * Updates an existing knot in the database.
+         * @param {string} knotId - The ID of the knot to update.
+         * @param {object} updatedData - The updated knot data.
+         */
+        function updateKnot(knotId, updatedData) {
+            const index = knotDatabase.findIndex(k => k.id === knotId);
+            if (index !== -1) {
+                const existingLearningData = knotDatabase[index].learning;
+                knotDatabase[index] = {
+                    ...knotDatabase[index],
+                    ...updatedData,
+                    learning: updatedData.learning || existingLearningData
+                };
+                 ensureLearningData(knotDatabase[index]);
+                saveKnots();
+                showToast(`Knot "${knotDatabase[index].name}" updated successfully!`, "success");
+                renderKnotBrowser();
+                populateCategoryFilters(); // Update filters
+                if (currentView === 'knot-detail' && knotDetailSection.dataset.knotId === knotId) {
+                    renderKnotDetail(knotId);
+                }
+            } else {
+                console.error(`Knot with ID ${knotId} not found for update.`);
+                showToast("Error: Could not find the knot to update.", "error");
+            }
+        }
+
+        /**
+         * Deletes a knot from the database.
+         * @param {string} knotId - The ID of the knot to delete.
+         */
+        function deleteKnot(knotId) {
+             const knotIndex = knotDatabase.findIndex(k => k.id === knotId);
+             if (knotIndex !== -1) {
+                const knotName = knotDatabase[knotIndex].name;
+                 if (confirm(`Are you sure you want to delete the knot "${knotName}"? This action cannot be undone.`)) {
+                    knotDatabase.splice(knotIndex, 1);
+                    saveKnots();
+                    showToast(`Knot "${knotName}" deleted.`, "info");
+                    populateCategoryFilters(); // Update filters
+                    if (currentView === 'knot-detail' && knotDetailSection.dataset.knotId === knotId) {
+                        navigateTo('browser');
+                    } else {
+                        renderKnotBrowser();
+                    }
+                }
+             } else {
+                 console.error(`Knot with ID ${knotId} not found for deletion.`);
+                 showToast("Error: Could not find the knot to delete.", "error");
+             }
+        }
+
+        /**
+         * Gets a knot by its ID.
+         * @param {string} knotId - The ID of the knot.
+         * @returns {object|null} The knot object or null if not found.
+         */
+        function getKnotById(knotId) {
+            return knotDatabase.find(k => k.id === knotId) || null;
+        }
+
+        // --- Spaced Repetition Algorithm ---
+
+        /**
+         * Calculates the next review interval for a knot.
+         * @param {object} knot - The knot object.
+         * @param {boolean} wasCorrect - Whether the user answered correctly.
+         * @returns {number} The new interval in days.
+         */
+        function calculateNextInterval(knot, wasCorrect) {
+            let { interval, easeFactor, consecutiveCorrect } = knot.learning;
+
+            if (wasCorrect) {
+                consecutiveCorrect += 1;
+                if (consecutiveCorrect === 1) {
+                    interval = REVIEW_INTERVAL_BASE_1;
+                } else if (consecutiveCorrect === 2) {
+                    interval = REVIEW_INTERVAL_BASE_2;
+                } else {
+                    // Ensure interval grows, minimum increase of 1 day after applying ease factor
+                    interval = Math.max(interval + 1, Math.ceil(interval * easeFactor));
+                }
+                easeFactor = Math.min(MAX_EASE_FACTOR, easeFactor + 0.1);
+            } else {
+                consecutiveCorrect = 0;
+                interval = 0;
+                easeFactor = Math.max(MIN_EASE_FACTOR, easeFactor - 0.2);
+            }
+
+            knot.learning.interval = interval;
+            knot.learning.easeFactor = parseFloat(easeFactor.toFixed(2));
+            knot.learning.consecutiveCorrect = consecutiveCorrect;
+
+            return interval;
+        }
+
+        /**
+         * Schedules the next review date for a knot based on the result.
+         * @param {object} knot - The knot object to update.
+         * @param {boolean} wasCorrect - True if answered correctly, false otherwise.
+         */
+        function scheduleReview(knot, wasCorrect) {
+            const newInterval = calculateNextInterval(knot, wasCorrect);
+            const today = getTodayDateString();
+
+            if (newInterval === 0) {
+                knot.learning.nextReviewDate = today;
+            } else {
+                knot.learning.nextReviewDate = addDaysToDate(today, newInterval);
+            }
+            console.log(`Scheduled "${knot.name}" for review on ${knot.learning.nextReviewDate} (Interval: ${newInterval}, Ease: ${knot.learning.easeFactor})`);
+        }
+
+        /**
+         * Gets knots due for review today or overdue.
+         * @param {Array<object>} allKnots - The entire knot database.
+         * @returns {Array<object>} An array of knot objects due for review.
+         */
+        function getKnotsForReview(allKnots) {
+            const todayStr = getTodayDateString();
+            const todayDate = parseDateString(todayStr); // Parse once
+             if (!todayDate) {
+                 console.error("Could not parse today's date for review check.");
+                 return []; // Avoid errors if date parsing fails
+             }
+
+            return allKnots.filter(knot => {
+                ensureLearningData(knot);
+                const reviewDate = parseDateString(knot.learning.nextReviewDate);
+                // Consider due if reviewDate is null, invalid, or on/before today
+                return !reviewDate || reviewDate <= todayDate;
+            });
+        }
+
+
+        // --- UI Rendering Functions ---
+
+        /**
+         * Switches the visible section in the app.
+         * @param {string} sectionId - The ID of the section to show.
+         */
+        function navigateTo(sectionId) {
+            currentView = sectionId;
+            sections.forEach(section => {
+                section.classList.toggle('hidden', section.id !== sectionId);
+            });
+
+            // Highlight active nav button
+             navButtons.forEach(button => {
+                 button.classList.toggle('active', button.dataset.section === sectionId);
+             });
+
+            // Scroll to top of content area
+            appContent.scrollTop = 0;
+            window.scrollTo(0, 0);
+
+            // Run section-specific setup
+            if (sectionId === 'browser') {
+                renderKnotBrowser();
+            } else if (sectionId === 'add-knot') {
+                // Only reset if not editing (check hidden input)
+                if (!knotIdInput.value) {
+                     resetKnotForm();
+                }
+            } else if (sectionId === 'test-mode') {
+                setupTestMode(); // Reset to setup screen
+            } else if (sectionId === 'progress') {
+                renderProgressOverview(); // This will now render the chart too
+            } else if (sectionId === 'import-export') {
+                setupImportExport();
+            }
+        }
+
+        /**
+         * Populates the category filter dropdowns based on current knots.
+         */
+        function populateCategoryFilters() {
+             const categories = [...new Set(knotDatabase.map(k => k.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })); // Case-insensitive sort
+
+             // Populate Browser Filter
+             const currentBrowserFilter = filterCategorySelect.value; // Preserve selection if possible
+             filterCategorySelect.innerHTML = '<option value="all">All Categories</option>';
+             categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.toLowerCase(); // Use lowercase value for filtering consistency
+                option.textContent = cat;
+                filterCategorySelect.appendChild(option);
+             });
+             // Restore selection if the category still exists
+             if (categories.map(c => c.toLowerCase()).includes(currentBrowserFilter)) {
+                 filterCategorySelect.value = currentBrowserFilter;
+             } else {
+                 filterCategorySelect.value = 'all'; // Default back to 'all' if category was removed
+             }
+
+
+             // Populate Test Setup Filter
+             const currentTestFilter = testCategorySelect.value; // Preserve selection
+             testCategorySelect.innerHTML = '<option value="all">All Categories</option>';
+             categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.toLowerCase();
+                option.textContent = cat;
+                testCategorySelect.appendChild(option);
+             });
+              // Restore selection
+             if (categories.map(c => c.toLowerCase()).includes(currentTestFilter)) {
+                 testCategorySelect.value = currentTestFilter;
+             } else {
+                 testCategorySelect.value = 'all';
+             }
+        }
+
+
+        /**
+         * Renders the list of knots in the browser view based on filters and sorting.
+         */
+        function renderKnotBrowser() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const levelFilter = filterLevelSelect.value;
+            const categoryFilter = filterCategorySelect.value; // Already lowercase from populateCategoryFilters
+            const sortBy = sortBySelect.value;
+
+            let filteredKnots = knotDatabase.filter(knot => {
+                const nameMatch = knot.name.toLowerCase().includes(searchTerm) ||
+                                  (knot.alternateNames && knot.alternateNames.some(alt => alt.toLowerCase().includes(searchTerm)));
+                const levelMatch = levelFilter === 'all' || knot.typingLevel.toString() === levelFilter;
+                const categoryMatch = categoryFilter === 'all' || (knot.category && knot.category.toLowerCase() === categoryFilter);
+                return nameMatch && levelMatch && categoryMatch;
+            });
+
+            // Sorting
+            filteredKnots.sort((a, b) => {
+                ensureLearningData(a);
+                ensureLearningData(b);
+                switch (sortBy) {
+                    case 'name-asc': return a.name.localeCompare(b.name);
+                    case 'name-desc': return b.name.localeCompare(a.name);
+                    case 'level-asc': return a.typingLevel - b.typingLevel;
+                    case 'level-desc': return b.typingLevel - a.typingLevel;
+                    case 'next-review-asc':
+                        const dateA = parseDateString(a.learning.nextReviewDate) || new Date(0);
+                        const dateB = parseDateString(b.learning.nextReviewDate) || new Date(0);
+                        return dateA - dateB;
+                    default: return 0;
+                }
+            });
+
+            knotListContainer.innerHTML = '';
+
+            if (filteredKnots.length === 0) {
+                knotListContainer.innerHTML = '<p class="text-gray-500 italic text-center my-4">No knots match your criteria. Try adjusting filters or adding knots.</p>';
+                return;
+            }
+
+            const todayStr = getTodayDateString();
+            const todayDate = parseDateString(todayStr);
+
+            filteredKnots.forEach(knot => {
+                const knotElement = document.createElement('div');
+                knotElement.className = 'border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition duration-150 ease-in-out cursor-pointer flex justify-between items-center shadow-sm';
+                knotElement.dataset.knotId = knot.id;
+
+                 ensureLearningData(knot);
+                 const nextReview = knot.learning.nextReviewDate || 'N/A';
+                 const reviewDate = parseDateString(nextReview);
+                 const isDue = !reviewDate || reviewDate <= todayDate;
+
+                knotElement.innerHTML = `
+                    <div>
+                        <h3 class="font-semibold text-blue-700">${knot.name}</h3>
+                        <p class="text-sm text-gray-600">Level: ${knot.typingLevel} | ${knot.category || 'N/A'}</p>
+                        <p class="text-xs text-gray-500">Next Review: <span class="${isDue ? 'font-bold text-red-600' : ''}">${nextReview}</span> (Ease: ${knot.learning.easeFactor.toFixed(1)})</p>
+                    </div>
+                `;
+                knotListContainer.appendChild(knotElement);
+
+                // Add event listeners directly to the knot element
+                knotElement.addEventListener('click', () => {
+                    renderKnotDetail(knot.id);
+                });
+                
+                // Add click, edit and delete functionality to the entire knot element
+                knotElement.addEventListener('dblclick', (e) => {
+                    loadKnotIntoForm(knot.id);
+                });
+            });
+        }
+
+         /**
+         * Renders the detailed view for a specific knot.
+         * @param {string} knotId - The ID of the knot to display.
+         */
+        function renderKnotDetail(knotId) {
+            const knot = getKnotById(knotId);
+            if (!knot) {
+                showToast("Error: Knot not found.", "error");
+                navigateTo('browser');
+                return;
+            }
+
+            ensureLearningData(knot);
+
+            knotDetailSection.dataset.knotId = knotId;
+            knotDetailContent.innerHTML = `
+                <h2 class="text-2xl font-bold mb-1">${knot.name}</h2>
+                ${knot.alternateNames && knot.alternateNames.length > 0 ? `<p class="text-sm text-gray-500 italic mb-3">Also known as: ${knot.alternateNames.join(', ')}</p>` : ''}
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 mb-4 text-sm">
+                    <p><strong class="font-semibold text-gray-700">Category:</strong> ${knot.category || 'N/A'}</p>
+                    <p><strong class="font-semibold text-gray-700">Level:</strong> ${knot.typingLevel}</p>
+                    <p><strong class="font-semibold text-gray-700">Next Review:</strong> ${knot.learning.nextReviewDate || 'N/A'}</p>
+                    <p><strong class="font-semibold text-gray-700">Ease Factor:</strong> ${knot.learning.easeFactor.toFixed(2)}</p>
+                    <p><strong class="font-semibold text-gray-700">Interval:</strong> ${knot.learning.interval} days</p>
+                    <p><strong class="font-semibold text-gray-700">Consecutive Correct:</strong> ${knot.learning.consecutiveCorrect}</p>
+                </div>
+
+                <div class="mb-4">
+                    <h3 class="font-semibold text-gray-800 mb-1">Description:</h3>
+                    <p class="text-sm text-gray-700 whitespace-pre-wrap">${knot.description || 'No description provided.'}</p>
+                </div>
+
+                <div class="mb-4">
+                    <h3 class="font-semibold text-gray-800 mb-2">Media Resources:</h3>
+                    <div id="detail-media-container" class="space-y-4">
+                        ${renderMediaElements(knot.mediaUrls || [], 'detail')}
+                    </div>
+                </div>
+
+                ${knot.url ? `
+                <div class="mb-4">
+                    <h3 class="font-semibold text-gray-800 mb-1">Reference:</h3>
+                    <a href="${knot.url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 hover:underline break-all text-sm">
+                        ${knot.url} <img src="https://unpkg.com/lucide-static@latest/icons/book-open.svg" alt="book open icon" />
+                    </a>
+                </div>` : ''}
+            `;
+
+             // Attach event listeners for buttons within the detail view
+             editKnotFromDetailButton.onclick = () => loadKnotIntoForm(knotId);
+             deleteKnotFromDetailButton.onclick = () => deleteKnot(knotId);
+
+            navigateTo('knot-detail');
+        }
+
+        /**
+         * Resets the Add/Edit knot form to its default state for adding a new knot.
+         */
+        function resetKnotForm() {
+            knotForm.reset();
+            knotIdInput.value = '';
+            knotFormTitle.textContent = 'Add New Knot';
+            knotFormSubmitText.textContent = 'Save Knot';
+            mediaUrlInputsContainer.innerHTML = ''; // Clear all media rows
+            addMediaUrlRow(); // Add one blank row for a new knot
+        }
+
+        /**
+         * Adds a new row for entering media URL and type in the form.
+         * @param {string} type - Optional: The type to pre-select ('image', 'video', 'webpage').
+         * @param {string} url - Optional: The URL to pre-fill.
+         */
+        function addMediaUrlRow(type = 'image', url = '') {
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-center media-url-row';
+            row.innerHTML = `
+                <select class="media-type-select block w-1/3 py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <option value="image">Image URL</option>
+                    <option value="video">Video URL</option>
+                    <option value="webpage">Webpage URL</option>
+                </select>
+                <input type="url" placeholder="Enter URL" class="media-url-input block w-2/3 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                <button type="button" class="remove-media-row text-red-500 hover:text-red-700 p-1 rounded-full flex items-center justify-center hover:bg-red-100" title="Remove URL">
+                    <img src="https://unpkg.com/lucide-static@latest/icons/x.svg" alt="x icon" />
+                </button>
+            `;
+             // Set values if provided (for editing)
+            row.querySelector('.media-type-select').value = type;
+            row.querySelector('.media-url-input').value = url;
+
+            mediaUrlInputsContainer.appendChild(row);
+
+            // Add event listener to the new remove button
+             row.querySelector('.remove-media-row').addEventListener('click', () => {
+                 if (mediaUrlInputsContainer.querySelectorAll('.media-url-row').length > 1) {
+                    row.remove();
+                 } else {
+                     // Clear the inputs of the last row
+                     row.querySelector('.media-type-select').value = 'image';
+                     row.querySelector('.media-url-input').value = '';
+                 }
+            });
+        }
+
+        /**
+         * Loads an existing knot's data into the form for editing.
+         * @param {string} knotId - The ID of the knot to edit.
+         */
+        function loadKnotIntoForm(knotId) {
+            const knot = getKnotById(knotId);
+            if (!knot) {
+                showToast("Error: Knot not found for editing.", "error");
+                return;
+            }
+
+            // Don't reset the form fully, just set the values
+            knotFormTitle.textContent = 'Edit Knot';
+            knotFormSubmitText.textContent = 'Update Knot';
+            knotIdInput.value = knot.id; // Set the hidden ID field
+            knotNameInput.value = knot.name;
+            knotAlternateNamesInput.value = knot.alternateNames ? knot.alternateNames.join(', ') : '';
+            knotDescriptionInput.value = knot.description;
+            knotLevelSelect.value = knot.typingLevel.toString();
+            knotCategoryInput.value = knot.category || '';
+            knotUrlInput.value = knot.url || '';
+
+            // Populate media URLs - Clear existing first, then add based on knot data
+            mediaUrlInputsContainer.innerHTML = ''; // *Crucial: Clear before adding*
+            if (knot.mediaUrls && knot.mediaUrls.length > 0) {
+                knot.mediaUrls.forEach(media => {
+                    // Pass data to addMediaUrlRow to pre-fill
+                    addMediaUrlRow(media.type, media.url);
+                });
+            } else {
+                // If the knot has no media URLs, add one blank row for editing
+                addMediaUrlRow();
+            }
+
+            navigateTo('add-knot'); // Navigate *after* populating
+        }
+
+        /**
+         * Handles the submission of the knot form (both add and edit).
+         * @param {Event} event - The form submission event.
+         */
+        function handleKnotFormSubmit(event) {
+            event.preventDefault();
+
+            const knotId = knotIdInput.value; // Read the hidden ID field
+            const mediaUrls = [];
+            mediaUrlInputsContainer.querySelectorAll('.media-url-row').forEach(row => {
+                const type = row.querySelector('.media-type-select').value;
+                const url = row.querySelector('.media-url-input').value.trim();
+                if (url) {
+                    mediaUrls.push({ type, url });
+                }
+            });
+
+            const knotData = {
+                name: knotNameInput.value.trim(),
+                alternateNames: knotAlternateNamesInput.value.split(',')
+                                    .map(name => name.trim())
+                                    .filter(name => name !== ''),
+                description: knotDescriptionInput.value.trim(),
+                typingLevel: parseInt(knotLevelSelect.value, 10),
+                category: knotCategoryInput.value.trim(),
+                mediaUrls: mediaUrls,
+                url: knotUrlInput.value.trim() || null
+            };
+
+            if (!knotData.name || !knotData.description || !knotData.category) {
+                 showToast("Please fill in all required fields (*).", "error");
+                 return;
+            }
+
+            if (knotId) {
+                updateKnot(knotId, knotData);
+            } else {
+                addKnot(knotData);
+            }
+
+            resetKnotForm(); // Reset form state after successful submission
+            navigateTo('browser');
+        }
+
+        /**
+         * Renders appropriate HTML elements for media URLs.
+         * @param {Array<object>} mediaUrls - Array of media objects ({type, url}).
+         * @param {string} context - 'detail' or 'test' to adjust styling/behavior.
+         * @returns {string} HTML string containing media elements.
+         */
+        function renderMediaElements(mediaUrls, context = 'detail') {
+            if (!mediaUrls || mediaUrls.length === 0) {
+                return '<p class="text-sm text-gray-500 italic">No media resources available.</p>';
+            }
+
+            // Collect all URLs for potential caching
+            const allMediaUrls = [];
+            
+            const mediaHtml = mediaUrls.map((media, index) => {
+                const { type, url } = media;
+                if (!url || typeof url !== 'string' || !url.startsWith('http')) {
+                    return `<p class="text-sm text-red-500">Invalid or non-HTTP(S) URL (${index + 1})</p>`;
+                }
+
+                // Add to list of URLs to potentially cache
+                allMediaUrls.push(url);
+                
+                try {
+                    // Basic sanitization
+                    const safeUrl = url.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+                    switch (type) {
+                        case 'image':
+                            return `
+                                <div class="mb-2">
+                                    <img src="${safeUrl}" alt="Knot Image ${index + 1}" class="max-w-full h-auto rounded-md border shadow-sm mx-auto block" style="max-height: 300px;" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'media-placeholder\\'>Image failed to load</div>'; this.style.display='none';">
+                                </div>`;
+                        case 'video':
+                            let videoEmbedHtml = '';
+                            try {
+                                const urlObj = new URL(safeUrl); // Use URL API for better parsing
+                                const hostname = urlObj.hostname.replace('www.', '');
+
+                                if (hostname === 'youtube.com' && urlObj.searchParams.has('v')) {
+                                    const videoId = urlObj.searchParams.get('v');
+                                    // Use youtube-nocookie for better privacy
+                                    videoEmbedHtml = `<iframe class="w-full aspect-video rounded-md border" src="https://www.youtube-nocookie.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen title="YouTube video player"></iframe>`;
+                                } else if (hostname === 'youtu.be') {
+                                     const videoId = urlObj.pathname.substring(1);
+                                     videoEmbedHtml = `<iframe class="w-full aspect-video rounded-md border" src="https://www.youtube-nocookie.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen title="YouTube video player"></iframe>`;
+                                } else if (hostname === 'vimeo.com') {
+                                    const videoId = urlObj.pathname.split('/').pop(); // Get last part of path
+                                    if (videoId && /^\d+$/.test(videoId)) {
+                                        videoEmbedHtml = `<iframe class="w-full aspect-video rounded-md border" src="https://player.vimeo.com/video/${videoId}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="Vimeo video player"></iframe>`;
+                                    }
+                                }
+                            } catch(e) {
+                                console.warn("Could not parse video URL for embedding:", safeUrl, e);
+                            }
+
+
+                            if (videoEmbedHtml) {
+                                return `<div class="mb-2 video-container">${videoEmbedHtml}</div>`;
+                            } else {
+                                // Fallback link
+                                return `
+                                    <div class="mb-2">
+                                        <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 text-sm inline-flex items-center gap-1">
+                                            Watch Video ${index + 1} <img src="https://unpkg.com/lucide-static@latest/icons/book-open.svg" alt="book open icon" />
+                                        </a>
+                                        <p class="text-xs text-gray-500">(Link opens in new tab. Could not auto-embed.)</p>
+                                    </div>`;
+                            }
+                        case 'webpage':
+                            return `
+                                <div class="mb-2">
+                                    <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 text-sm inline-flex items-center gap-1">
+                                        View Webpage ${index + 1} <img src="https://unpkg.com/lucide-static@latest/icons/book-open.svg" alt="book open icon" />
+                                    </a>
+                                </div>`;
+                        default:
+                            return `<p class="text-sm text-yellow-600">Unknown media type (${type}) for URL ${index + 1}. <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800">Open Link</a></p>`;
+                    }
+                } catch (e) {
+                     console.error("Error rendering media URL:", url, e);
+                     return `<p class="text-sm text-red-500">Error rendering media URL ${index + 1}.</p>`;
+                }
+            }).join('');
+            
+            // Request service worker to cache these resources for offline use
+            if (allMediaUrls.length > 0 && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'CACHE_MEDIA',
+                    urls: allMediaUrls
+                });
+            }
+            
+            return mediaHtml;
+        }
+
+
+        // --- Test Mode Logic ---
+
+         /**
+         * Sets up the Test Mode screen (category dropdown, etc.).
+         */
+        function setupTestMode() {
+            testSetupSection.classList.remove('hidden');
+            testInterfaceSection.classList.add('hidden');
+            testSummarySection.classList.add('hidden');
+            testSetupError.classList.add('hidden');
+            testSetupError.textContent = '';
+            currentTestSession = null;
+            sessionStorage.removeItem(SESSION_STORAGE_KEY);
+
+            populateCategoryFilters(); // Ensure test category dropdown is up-to-date
+
+            testLevelCheckboxes.forEach(cb => cb.checked = true);
+            testKnotCountInput.value = Math.min(10, knotDatabase.length > 0 ? knotDatabase.length : 10); // Default, ensure at least 1 if db empty
+        }
+
+        /**
+         * Starts a new test session based on user selections.
+         */
+        function startTest() {
+            const selectedLevels = Array.from(testLevelCheckboxes)
+                                     .filter(cb => cb.checked)
+                                     .map(cb => parseInt(cb.value, 10));
+            const selectedCategory = testCategorySelect.value; // Lowercase value
+            const maxKnots = parseInt(testKnotCountInput.value, 10);
+
+            testSetupError.classList.add('hidden');
+
+            if (selectedLevels.length === 0) {
+                testSetupError.textContent = 'Please select at least one difficulty level.';
+                testSetupError.classList.remove('hidden');
+                return;
+            }
+            if (isNaN(maxKnots) || maxKnots < 1 || maxKnots > 50) {
+                 testSetupError.textContent = 'Please enter a valid number of knots (1-50).';
+                 testSetupError.classList.remove('hidden');
+                 return;
+            }
+
+            let eligibleKnots = knotDatabase.filter(knot => {
+                const levelMatch = selectedLevels.includes(knot.typingLevel);
+                const categoryMatch = selectedCategory === 'all' || (knot.category && knot.category.toLowerCase() === selectedCategory);
+                return levelMatch && categoryMatch;
+            });
+
+            if (eligibleKnots.length === 0) {
+                 testSetupError.textContent = 'No knots found matching your criteria. Adjust selections or add more knots.';
+                 testSetupError.classList.remove('hidden');
+                 return;
+            }
+
+            const knotsToTest = selectKnotsForSession(eligibleKnots, maxKnots);
+
+             if (knotsToTest.length === 0) {
+                 testSetupError.textContent = 'Could not select any knots for testing (perhaps none are due or available?). Try adjusting criteria.';
+                 testSetupError.classList.remove('hidden');
+                 return;
+            }
+
+            currentTestSession = {
+                knots: knotsToTest.map(k => ({ id: k.id, name: k.name, result: null })),
+                currentIndex: 0,
+                startTime: Date.now(),
+                totalKnots: knotsToTest.length,
+            };
+
+            saveTestSessionState();
+            displayCurrentTestKnot();
+
+            testSetupSection.classList.add('hidden');
+            testInterfaceSection.classList.remove('hidden');
+            testSummarySection.classList.add('hidden');
+        }
+
+        /**
+         * Selects knots for a test session using the 80/20 deterministic/random split.
+         * @param {Array<object>} eligibleKnots - Knots matching level/category filters.
+         * @param {number} maxKnots - Maximum number of knots for the session.
+         * @returns {Array<object>} The selected list of knot objects for the test.
+         */
+        function selectKnotsForSession(eligibleKnots, maxKnots) {
+            const dueKnots = getKnotsForReview(eligibleKnots);
+
+            const today = parseDateString(getTodayDateString());
+             dueKnots.sort((a, b) => {
+                const dateA = parseDateString(a.learning.nextReviewDate) || new Date(0);
+                const dateB = parseDateString(b.learning.nextReviewDate) || new Date(0);
+                const overdueA = dateA < today;
+                const overdueB = dateB < today;
+
+                if (overdueA !== overdueB) return overdueA ? -1 : 1; // Overdue first
+                if (overdueA && overdueB && dateA !== dateB) return dateA - dateB; // Sort overdue by date
+                return a.learning.easeFactor - b.learning.easeFactor; // Then by ease factor
+            });
+
+            const numDeterministic = Math.min(dueKnots.length, Math.ceil(maxKnots * (1 - RANDOM_KNOT_RATIO)));
+            const deterministicSelection = dueKnots.slice(0, numDeterministic);
+
+            const deterministicIds = new Set(deterministicSelection.map(k => k.id));
+            const randomPool = eligibleKnots.filter(k => !deterministicIds.has(k.id));
+
+            // Shuffle random pool (Fisher-Yates)
+            for (let i = randomPool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [randomPool[i], randomPool[j]] = [randomPool[j], randomPool[i]];
+            }
+
+            const numRandomNeeded = maxKnots - deterministicSelection.length;
+            const numRandom = Math.min(randomPool.length, numRandomNeeded > 0 ? numRandomNeeded : 0);
+            const randomSelection = randomPool.slice(0, numRandom);
+
+            let finalSelection = [...deterministicSelection, ...randomSelection];
+            finalSelection = finalSelection.slice(0, Math.min(maxKnots, DAILY_REVIEW_LIMIT));
+
+             // Shuffle final list
+             for (let i = finalSelection.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [finalSelection[i], finalSelection[j]] = [finalSelection[j], finalSelection[i]];
+            }
+
+            console.log(`Selected ${finalSelection.length} knots: ${deterministicSelection.length} deterministic, ${randomSelection.length} random.`);
+            return finalSelection;
+        }
+
+
+         /**
+         * Displays the current knot in the test interface.
+         */
+        function displayCurrentTestKnot() {
+            if (!currentTestSession || currentTestSession.currentIndex >= currentTestSession.totalKnots) {
+                endTest();
+                return;
+            }
+
+            const currentKnotInfo = currentTestSession.knots[currentTestSession.currentIndex];
+            const knot = getKnotById(currentKnotInfo.id);
+
+            if (!knot) {
+                console.error(`Knot with ID ${currentKnotInfo.id} not found during test.`);
+                showToast("Error: Could not load the next knot.", "error");
+                currentTestSession.currentIndex++;
+                saveTestSessionState();
+                displayCurrentTestKnot(); // Try next one
+                return;
+            }
+
+            testProgressSpan.textContent = `${currentTestSession.currentIndex + 1}/${currentTestSession.totalKnots}`;
+            testKnotNameH3.textContent = knot.name;
+            testKnotAlternateP.textContent = knot.alternateNames && knot.alternateNames.length > 0 ? `(${knot.alternateNames.join(', ')})` : '';
+
+            testAnswerArea.classList.add('hidden');
+            testKnotMediaDiv.innerHTML = '';
+            testKnotDescriptionP.textContent = '';
+            testKnotRefLink.href = '#';
+            testKnotRefLink.classList.add('hidden');
+
+            revealAnswerButton.classList.remove('hidden');
+            failButton.classList.add('hidden');
+            successButton.classList.add('hidden');
+        }
+
+        /**
+         * Handles the "Reveal Answer" action during a test.
+         */
+        function handleRevealAnswer() {
+            if (!currentTestSession) return;
+            const currentKnotInfo = currentTestSession.knots[currentTestSession.currentIndex];
+            const knot = getKnotById(currentKnotInfo.id);
+            if (!knot) return;
+
+            testKnotMediaDiv.innerHTML = renderMediaElements(knot.mediaUrls || [], 'test');
+            testKnotDescriptionP.textContent = knot.description || 'No description available.';
+            if (knot.url) {
+                testKnotRefLink.href = knot.url;
+                testKnotRefLink.classList.remove('hidden');
+            } else {
+                 testKnotRefLink.classList.add('hidden');
+            }
+            testAnswerArea.classList.remove('hidden');
+
+            revealAnswerButton.classList.add('hidden');
+            failButton.classList.remove('hidden');
+            successButton.classList.remove('hidden');
+        }
+
+        /**
+         * Handles the user reporting success or failure for the current knot.
+         * @param {boolean} wasCorrect - True for success, false for failure.
+         */
+        function handleTestResult(wasCorrect) {
+            if (!currentTestSession) return;
+            const currentKnotInfo = currentTestSession.knots[currentTestSession.currentIndex];
+            const knot = getKnotById(currentKnotInfo.id);
+
+            if (knot) {
+                scheduleReview(knot, wasCorrect);
+                currentKnotInfo.result = wasCorrect;
+            } else {
+                 console.error(`Knot ${currentKnotInfo.id} not found when recording result.`);
+                 currentKnotInfo.result = 'error';
+            }
+
+            currentTestSession.currentIndex++;
+            saveTestSessionState();
+
+            if (currentTestSession.currentIndex >= currentTestSession.totalKnots) {
+                endTest(false);
+            } else {
+                displayCurrentTestKnot();
+            }
+        }
+
+        /**
+         * Ends the current test session and displays the summary.
+         * @param {boolean} cancelled - Was the session ended manually by the user?
+         */
+        function endTest(cancelled = false) {
+             // Save knot data immediately after session ends
+             saveKnots();
+
+            if (!currentTestSession) {
+                 if (currentView === 'test-mode') setupTestMode();
+                 return;
+             }
+
+            const results = currentTestSession.knots;
+            const correctCount = results.filter(k => k.result === true).length;
+             // Ensure totalAttempted only counts knots where user actually provided input
+            const totalAttempted = results.filter(k => k.result === true || k.result === false).length;
+            const percentage = totalAttempted > 0 ? ((correctCount / totalAttempted) * 100).toFixed(0) : 0;
+
+            // Add to historical data *before* clearing session
+            addHistoricalRecord(correctCount, totalAttempted);
+
+            // Display Summary
+            summaryScoreSpan.textContent = `${correctCount}/${totalAttempted}`;
+            summaryPercentageSpan.textContent = `${percentage}%`;
+            summaryDetailsDiv.innerHTML = '';
+            if (cancelled) {
+                 const p = document.createElement('p');
+                 p.className = 'text-sm text-yellow-700 italic';
+                 p.textContent = 'Session ended early. Results shown for completed knots.';
+                 summaryDetailsDiv.appendChild(p);
+            }
+
+            if (totalAttempted > 0) {
+                 const list = document.createElement('ul');
+                 list.className = 'list-disc list-inside space-y-1 text-sm mt-2';
+                 results.forEach(res => {
+                     if (res.result !== null && res.result !== 'error') { // Only show answered knots
+                         const listItem = document.createElement('li');
+                         listItem.innerHTML = `
+                            <span class="font-medium">${res.name}:</span>
+                            <span class="${res.result === true ? 'text-green-600' : 'text-red-600'}">
+                                ${res.result === true ? 'Correct' : 'Incorrect'}
+                            </span>
+                         `;
+                         list.appendChild(listItem);
+                     }
+                 });
+                 summaryDetailsDiv.appendChild(list);
+            } else if (!cancelled) {
+                 summaryDetailsDiv.innerHTML = '<p class="text-sm text-gray-500 italic">No knots were attempted in this session.</p>';
+            }
+
+            testInterfaceSection.classList.add('hidden');
+            testSummarySection.classList.remove('hidden');
+
+            // Clean up session state AFTER processing results
+            currentTestSession = null;
+            sessionStorage.removeItem(SESSION_STORAGE_KEY);
+        }
+
+        /**
+         * Saves the current test session state to sessionStorage.
+         */
+        function saveTestSessionState() {
+            if (currentTestSession) {
+                try {
+                    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(currentTestSession));
+                } catch (e) {
+                    console.error("Error saving test session state:", e);
+                    showToast("Could not save session progress.", "error");
+                }
+            }
+        }
+
+        /**
+         * Loads a test session state from sessionStorage.
+         * @returns {boolean} True if a session was successfully loaded, false otherwise.
+         */
+        function loadTestSessionState() {
+            const savedState = sessionStorage.getItem(SESSION_STORAGE_KEY);
+            if (savedState) {
+                try {
+                    currentTestSession = JSON.parse(savedState);
+                    if (currentTestSession && currentTestSession.knots && typeof currentTestSession.currentIndex === 'number') {
+                        console.log("Resuming previous test session.");
+                        return true;
+                    } else {
+                         console.warn("Invalid test session data found in sessionStorage.");
+                         sessionStorage.removeItem(SESSION_STORAGE_KEY);
+                         currentTestSession = null;
+                         return false;
+                    }
+                } catch (e) {
+                    console.error("Error loading test session state:", e);
+                    sessionStorage.removeItem(SESSION_STORAGE_KEY);
+                    currentTestSession = null;
+                    return false;
+                }
+            }
+            return false;
+        }
+
+
+        // --- Progress Overview ---
+
+        /**
+         * Renders the progress overview statistics and chart.
+         */
+        function renderProgressOverview() {
+            const totalKnots = knotDatabase.length;
+            const dueKnots = getKnotsForReview(knotDatabase);
+            const masteredKnots = knotDatabase.filter(k => k.learning && k.learning.easeFactor >= 2.8).length; // Use >= for clarity
+
+            statTotalKnots.textContent = totalKnots;
+            statMasteredKnots.textContent = masteredKnots;
+            statDueToday.textContent = dueKnots.length;
+
+            // Challenging knots
+            const sortedByEase = [...knotDatabase]
+                                .filter(k => k.learning)
+                                .sort((a, b) => a.learning.easeFactor - b.learning.easeFactor);
+            statChallengingKnots.innerHTML = '';
+            if (sortedByEase.length > 0) {
+                 const challenging = sortedByEase.slice(0, 5);
+                 challenging.forEach(k => {
+                    const li = document.createElement('li');
+                    li.textContent = `${k.name} (Ease: ${k.learning.easeFactor.toFixed(2)})`;
+                    statChallengingKnots.appendChild(li);
+                 });
+            } else {
+                 statChallengingKnots.innerHTML = '<li>No learning data yet.</li>';
+            }
+
+            // Progress by category
+            const categories = [...new Set(knotDatabase.map(k => k.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+            statCategoryProgress.innerHTML = '';
+            if (categories.length > 0) {
+                categories.forEach(cat => {
+                     const knotsInCategory = knotDatabase.filter(k => k.category === cat);
+                     const masteredInCategory = knotsInCategory.filter(k => k.learning && k.learning.easeFactor >= 2.8).length;
+                     const totalInCategory = knotsInCategory.length;
+                     const percentageMastered = totalInCategory > 0 ? ((masteredInCategory / totalInCategory) * 100).toFixed(0) : 0;
+                     const p = document.createElement('p');
+                     p.innerHTML = `<strong class="font-medium">${cat}:</strong> ${masteredInCategory}/${totalInCategory} mastered (${percentageMastered}%)`;
+                     statCategoryProgress.appendChild(p);
+                });
+            } else {
+                 statCategoryProgress.innerHTML = '<p>No categories defined yet.</p>';
+            }
+
+            // Render Chart
+            renderHistoricalChart();
+        }
+
+        /**
+         * Renders the historical performance chart using Chart.js.
+         */
+        function renderHistoricalChart() {
+            if (typeof Chart === 'undefined') {
+                 console.error("Chart.js not loaded.");
+                 chartMessage.textContent = "Charting library failed to load.";
+                 chartMessage.classList.remove('hidden');
+                 progressChartCanvas.classList.add('hidden');
+                 return;
+             }
+
+            const ctx = progressChartCanvas.getContext('2d');
+            if (!ctx) {
+                console.error("Could not get canvas context for chart.");
+                chartMessage.textContent = "Could not initialize chart.";
+                chartMessage.classList.remove('hidden');
+                progressChartCanvas.classList.add('hidden');
+                return;
+            }
+
+            // Process historical data for the chart (last 30 days maybe?)
+            // For simplicity, show all recorded days for now.
+             const chartData = historicalData.map(item => ({
+                x: item.date, // Chart.js can often parse YYYY-MM-DD
+                y: item.total > 0 ? (item.correct / item.total) * 100 : 0 // Percentage
+            }));
+
+            if (chartData.length === 0) {
+                chartMessage.textContent = "No historical test data yet. Complete some test sessions!";
+                chartMessage.classList.remove('hidden');
+                progressChartCanvas.classList.add('hidden');
+                 if (progressChartInstance) { // Destroy previous chart if no data
+                     progressChartInstance.destroy();
+                     progressChartInstance = null;
+                 }
+                return;
+            } else {
+                 chartMessage.classList.add('hidden');
+                 progressChartCanvas.classList.remove('hidden');
+            }
+
+
+            // Destroy previous chart instance if it exists
+            if (progressChartInstance) {
+                progressChartInstance.destroy();
+            }
+
+            // Create new chart instance
+            try {
+                 progressChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: [{
+                            label: '% Correct',
+                            data: chartData,
+                            borderColor: 'rgb(59, 130, 246)', // blue-500
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.1, // Slight curve
+                            fill: true,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true, // Adjust as needed
+                        scales: {
+                            x: {
+                                type: 'category', 
+                                title: {
+                                    display: true,
+                                    text: 'Test Attempt'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                max: 100, // Percentage scale
+                                title: {
+                                    display: true,
+                                    text: 'Percentage Correct'
+                                },
+                                ticks: {
+                                     callback: function(value) {
+                                        return value + '%'; // Add % sign to y-axis labels
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                         let label = context.dataset.label || '';
+                                         if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += context.parsed.y.toFixed(1) + '%'; // Tooltip percentage
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                 });
+            } catch (error) {
+                 console.error("Error creating chart:", error);
+                 chartMessage.textContent = "An error occurred while rendering the chart.";
+                 chartMessage.classList.remove('hidden');
+                 progressChartCanvas.classList.add('hidden');
+            }
+        }
+
+
+        // --- Import/Export ---
+
+        /**
+         * Sets up the Import/Export view state.
+         */
+        function setupImportExport() {
+            importFileInput.value = '';
+            importUrlInput.value = '';
+            importButton.disabled = true;
+            importStatusP.textContent = '';
+            importStatusP.className = 'text-sm mt-2';
+            importUrlPreview.classList.add('hidden');
+            validatedUrlData = null;
+            
+            // Default to file import tab
+            showImportTab('file');
+        }
+
+        /**
+         * Switches between import tabs (file or URL).
+         * @param {string} tab - The tab to show ('file' or 'url').
+         */
+        function showImportTab(tab) {
+            currentImportSource = tab;
+            
+            if (tab === 'file') {
+                importLocalTab.classList.replace('border-gray-200', 'border-blue-500');
+                importLocalTab.classList.replace('text-gray-500', 'text-blue-600');
+                importUrlTab.classList.replace('border-blue-500', 'border-gray-200');
+                importUrlTab.classList.replace('text-blue-600', 'text-gray-500');
+                
+                importLocalSection.classList.remove('hidden');
+                importUrlSection.classList.add('hidden');
+            } else {
+                importUrlTab.classList.replace('border-gray-200', 'border-blue-500');
+                importUrlTab.classList.replace('text-gray-500', 'text-blue-600');
+                importLocalTab.classList.replace('border-blue-500', 'border-gray-200');
+                importLocalTab.classList.replace('text-blue-600', 'text-gray-500');
+                
+                importUrlSection.classList.remove('hidden');
+                importLocalSection.classList.add('hidden');
+            }
+            
+            // Update button state based on the current tab and validation state
+            updateImportButtonState();
+        }
+
+        /**
+         * Updates the import button state based on the current import source and validation.
+         */
+        function updateImportButtonState() {
+            if (currentImportSource === 'file') {
+                importButton.disabled = !importFileInput.files[0];
+            } else {
+                importButton.disabled = !validatedUrlData;
+            }
+        }
+
+        /**
+         * Validates a URL to check if it contains valid JSON knot data.
+         */
+        async function validateImportUrl() {
+            let url = importUrlInput.value.trim();
+            if (!url) {
+                showToast("Please enter a URL", "error");
+                return;
+            }
+            
+            // Check if it's a Google Drive share link and transform it
+            const originalUrl = url;
+            url = transformGoogleDriveLink(url);
+            
+            // Provide feedback if URL was transformed
+            if (url !== originalUrl) {
+                importStatusP.textContent = 'Google Drive link detected. Transforming to direct download link...';
+                importStatusP.className = 'text-sm mt-2 text-blue-600';
+            }
+            
+            // Normal validation for non-Google Drive URLs
+            if (!url.match(/^https?:\/\/.+(\.json($|\?)|\/uc\?export=download&id=)/i)) {
+                importStatusP.textContent = 'URL should point to a .json file';
+                importStatusP.className = 'text-sm mt-2 text-yellow-600';
+                return;
+            }
+            
+            importStatusP.textContent = 'Validating URL...';
+            importStatusP.className = 'text-sm mt-2 text-blue-600';
+            importUrlPreview.classList.add('hidden');
+            validatedUrlData = null;
+            importButton.disabled = true;
+            
+            try {
+                showLoading();
+                
+                // Attempt to fetch with credentials first for CORS-enabled servers
+                let response;
+                try {
+                    response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        },
+                        cache: 'no-cache' // Prevent caching issues
+                    });
+                } catch (corsError) {
+                    // If the direct fetch fails (e.g., CORS error), try a different approach
+                    // This is a common issue with Google Drive and some other providers
+                    console.warn("Direct fetch failed, possibly due to CORS:", corsError);
+                    
+                    // Show a more friendly error message about CORS
+                    if (url.includes('drive.google.com')) {
+                        importStatusP.textContent = 'Note: For Google Drive files, make sure the file is set to "Anyone with the link can view"';
+                        importStatusP.className = 'text-sm mt-2 text-yellow-600';
+                    }
+                    
+                    // Re-throw to handle in the catch block
+                    throw new Error("Network error: Could not access the file. It may be due to CORS restrictions or the file is not publicly accessible.");
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error: ${response.status}`);
+                }
+                
+                let data;
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    // Special handling for invalid JSON (could be a Google Drive HTML response)
+                    if (url.includes('drive.google.com')) {
+                        throw new Error("Could not parse JSON from Google Drive. If the file is large (>5MB), try using a direct download link or GitHub Gist instead.");
+                    } else {
+                        throw new Error("Invalid JSON format: " + parseError.message);
+                    }
+                }
+                
+                hideLoading();
+                
+                // Validate structure
+                if (!data || !Array.isArray(data.knots)) {
+                    throw new Error("Invalid JSON format. Expected an object with a 'knots' array.");
+                }
+                
+                // Preview data
+                const knotCount = data.knots.length;
+                const hasProgress = data.knots.some(k => k.learning && typeof k.learning.easeFactor === 'number');
+                const hasHistory = Array.isArray(data.history);
+                const jsonSize = new Blob([JSON.stringify(data)]).size;
+                const readableSize = formatBytes(jsonSize);
+                
+                importUrlSize.textContent = `Size: ${readableSize}`;
+                importUrlKnotCount.textContent = `Found ${knotCount} knots${hasProgress ? ' with learning data' : ''}${hasHistory ? ` and ${data.history.length} history records` : ''}.`;
+                importUrlPreview.classList.remove('hidden');
+                
+                // Store transformed URL with the validated data
+                validatedUrlData = data;
+                validatedUrlData._sourceUrl = url; // Store the transformed URL
+                
+                importButton.disabled = false;
+                importStatusP.textContent = 'URL validated successfully! Click Import to load this data.';
+                importStatusP.className = 'text-sm mt-2 text-green-600';
+            } catch (error) {
+                hideLoading();
+                console.error("Error validating URL:", error);
+                importStatusP.textContent = `Error: ${error.message}`;
+                importStatusP.className = 'text-sm mt-2 text-red-600';
+                importButton.disabled = true;
+            }
+        }
+
+        /**
+         * Transforms a Google Drive share link to a direct download link.
+         * @param {string} url - The URL to transform.
+         * @returns {string} The transformed URL or the original if not a Google Drive link.
+         */
+        function transformGoogleDriveLink(url) {
+            // Check for different Google Drive share URL formats
+            
+            // Format: https://drive.google.com/file/d/FILE_ID/view...
+            const filePattern = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)(?:\/(?:view|edit).*)?/i;
+            let match = url.match(filePattern);
+            if (match) {
+                const fileId = match[1];
+                return `https://drive.google.com/uc?export=download&id=${fileId}`;
+            }
+            
+            // Format: https://drive.google.com/open?id=FILE_ID
+            const openPattern = /https:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/i;
+            match = url.match(openPattern);
+            if (match) {
+                const fileId = match[1];
+                return `https://drive.google.com/uc?export=download&id=${fileId}`;
+            }
+            
+            // Format: Already in the correct format
+            const downloadPattern = /https:\/\/drive\.google\.com\/uc\?export=download&id=([a-zA-Z0-9_-]+)/i;
+            if (downloadPattern.test(url)) {
+                return url; // Already in the correct format
+            }
+            
+            // Handle Google Drive shortlinks (https://docs.google.com/...)
+            const docsPattern = /https:\/\/docs\.google\.com\/[a-z]+\/d\/([a-zA-Z0-9_-]+)(?:\/(?:edit|view).*)?/i;
+            match = url.match(docsPattern);
+            if (match) {
+                const fileId = match[1];
+                return `https://drive.google.com/uc?export=download&id=${fileId}`;
+            }
+            
+            // Return the original URL if it doesn't match any known Google Drive formats
+            return url;
+        }
+
+        /**
+         * Formats a byte size into a human-readable string.
+         * @param {number} bytes - The size in bytes.
+         * @returns {string} Human-readable size.
+         */
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        /**
+         * Handles the import button click.
+         */
+        function handleImport() {
+            if (currentImportSource === 'file') {
+                handleFileImport();
+            } else {
+                handleUrlImport();
+            }
+        }
+
+        /**
+         * Handles importing from a local file.
+         */
+        function handleFileImport() {
+            const file = importFileInput.files[0];
+            if (!file) {
+                showToast("No file selected for import.", "error");
+                return;
+            }
+
+            if (!confirm("WARNING: Importing this file will REPLACE all your current knots and learning progress/history. Are you sure you want to continue? Consider exporting your current data first as a backup.")) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    processImportedData(importedData);
+                } catch (error) {
+                    console.error("Error importing file:", error);
+                    importStatusP.textContent = `Import failed: ${error.message}`;
+                    importStatusP.className = 'text-sm mt-2 text-red-600';
+                    showToast("Failed to import data. Check file format.", "error");
+                }
+            };
+
+            reader.onerror = function() {
+                 importStatusP.textContent = 'Error reading the selected file.';
+                 importStatusP.className = 'text-sm mt-2 text-red-600';
+                 showToast("Error reading file.", "error");
+            };
+
+            reader.readAsText(file);
+        }
+
+        /**
+         * Handles importing from a URL.
+         */
+        function handleUrlImport() {
+            if (!validatedUrlData) {
+                showToast("Please validate the URL first.", "error");
+                return;
+            }
+            
+            if (!confirm("WARNING: Importing this data will REPLACE all your current knots and learning progress/history. Are you sure you want to continue? Consider exporting your current data first as a backup.")) {
+                return;
+            }
+            
+            try {
+                processImportedData(validatedUrlData);
+            } catch (error) {
+                console.error("Error processing URL data:", error);
+                importStatusP.textContent = `Import failed: ${error.message}`;
+                importStatusP.className = 'text-sm mt-2 text-red-600';
+                showToast("Failed to import data. Check data format.", "error");
+            }
+        }
+
+        /**
+         * Processes imported data from either file or URL.
+         * @param {object} importedData - The parsed JSON data.
+         */
+        function processImportedData(importedData) {
+            if (!importedData || !Array.isArray(importedData.knots)) {
+                throw new Error("Invalid file format. Expected an object with a 'knots' array.");
+            }
+
+            const importedKnots = importedData.knots;
+            // Check if progress data seems present in *any* knot
+            const hasKnotProgressData = importedKnots.some(k => k.learning && typeof k.learning.easeFactor === 'number');
+            // Check for historical data
+            const importedHistory = importedData.history;
+            const hasHistoryData = Array.isArray(importedHistory);
+
+            // Validate and sanitize imported knots
+            const validatedKnots = [];
+            importedKnots.forEach((knot, index) => {
+                if (!knot || typeof knot.name !== 'string' || typeof knot.description !== 'string' || typeof knot.typingLevel !== 'number') {
+                     console.warn(`Skipping invalid knot structure at index ${index} during import.`);
+                     return;
+                }
+                knot.id = generateId(); // Always assign new ID on import
+                if (hasKnotProgressData) {
+                     ensureLearningData(knot); // Validate/initialize if progress included
+                } else {
+                     // Reset learning data if progress wasn't included
+                     knot.learning = {
+                        nextReviewDate: getTodayDateString(), interval: 0, easeFactor: DEFAULT_EASE_FACTOR, consecutiveCorrect: 0
+                    };
+                }
+                 // Basic sanitization
+                 knot.category = typeof knot.category === 'string' ? knot.category.trim() : 'Uncategorized';
+                 knot.alternateNames = Array.isArray(knot.alternateNames) ? knot.alternateNames.map(n => String(n).trim()).filter(Boolean) : [];
+                 knot.mediaUrls = Array.isArray(knot.mediaUrls) ? knot.mediaUrls.filter(m => m && m.type && m.url) : [];
+                 knot.url = typeof knot.url === 'string' ? knot.url.trim() : null;
+
+                 validatedKnots.push(knot);
+            });
+
+             // Validate imported history data
+             let validatedHistory = [];
+             if (hasHistoryData) {
+                validatedHistory = importedHistory.filter(item =>
+                    item && typeof item.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.date) &&
+                    typeof item.correct === 'number' && typeof item.total === 'number' && item.total >= item.correct
+                );
+                console.log(`Importing ${validatedHistory.length} valid historical records.`);
+             } else {
+                 console.log("No historical data found or included in import file.");
+             }
+
+
+            // Replace current database and history
+            knotDatabase = validatedKnots;
+            historicalData = validatedHistory;
+            saveKnots();
+            saveHistory();
+
+            let importMessage = `Successfully imported ${validatedKnots.length} knots.`;
+            if (hasKnotProgressData) importMessage += " Learning progress included.";
+            else importMessage += " Learning progress reset.";
+            if (hasHistoryData) importMessage += ` ${validatedHistory.length} history records included.`;
+
+
+            importStatusP.textContent = importMessage;
+            importStatusP.className = 'text-sm mt-2 text-green-600';
+            showToast("Data imported successfully!", "success");
+
+            // Reset UI and navigate
+            importFileInput.value = '';
+            importUrlInput.value = '';
+            importUrlPreview.classList.add('hidden');
+            validatedUrlData = null;
+            importButton.disabled = true;
+            populateCategoryFilters(); // Update filters based on new data
+            navigateTo('browser');
+        }
+
+        /**
+         * Exports knot data (and optionally progress) to a JSON file.
+         */
+        function handleExport() {
+            const includeProgress = exportIncludeProgressCheckbox.checked;
+            let dataToExport;
+
+            // Always include version and date
+            const exportObject = {
+                 version: 1.1, // Increment version if format changes (added history)
+                 exportDate: new Date().toISOString(),
+                 knots: [],
+                 history: includeProgress ? historicalData : undefined // Only include history if checked
+            };
+
+            if (includeProgress) {
+                exportObject.knots = knotDatabase; // Include learning data
+            } else {
+                // Deep copy and remove learning data
+                exportObject.knots = JSON.parse(JSON.stringify(knotDatabase));
+                exportObject.knots.forEach(knot => delete knot.learning);
+            }
+
+            try {
+                const jsonString = JSON.stringify(exportObject, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const timestamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+                a.href = url;
+                a.download = `knot-app-backup-${timestamp}${includeProgress ? '-with-progress' : ''}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast("Data exported successfully!", "success");
+            } catch (error) {
+                 console.error("Error exporting data:", error);
+                 showToast("Failed to export data.", "error");
+            }
+        }
+
+        /**
+         * Handles the selection of a file for import.
+         */
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file && file.type === 'application/json') {
+                importButton.disabled = false;
+                importStatusP.textContent = `Selected file: ${file.name}`;
+                importStatusP.className = 'text-sm mt-2 text-gray-600';
+            } else {
+                importButton.disabled = true;
+                importStatusP.textContent = 'Please select a valid .json file.';
+                importStatusP.className = 'text-sm mt-2 text-red-600';
+                if (file) {
+                    importFileInput.value = '';
+                }
+            }
+        }
+
+        /**
+         * Resets all application data after confirmation.
+         */
+        function handleResetAllData() {
+             if (confirm("DANGER ZONE: This will permanently delete ALL knots, learning progress, and test history. This action cannot be undone. Are you absolutely sure?")) {
+                 if (confirm("SECOND WARNING: Really delete everything? There is no going back!")) {
+                    knotDatabase = [];
+                    historicalData = [];
+                    localStorage.removeItem(KNOT_DB_KEY);
+                    localStorage.removeItem(HISTORY_DB_KEY);
+                    sessionStorage.removeItem(SESSION_STORAGE_KEY);
+                    currentTestSession = null;
+                    showToast("All data has been reset.", "info");
+
+                    // Refresh UI fully
+                    if (progressChartInstance) {
+                        progressChartInstance.destroy();
+                        progressChartInstance = null;
+                    }
+                    resetKnotForm();
+                    populateCategoryFilters();
+                    renderKnotBrowser();
+                    setupTestMode();
+                    renderProgressOverview(); // Will show empty state
+                    setupImportExport();
+                    navigateTo('browser');
+                }
+             }
+        }
+
+
+        // --- Event Listeners ---
+
+        function setupEventListeners() {
+            // Navigation
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    navigateTo(button.dataset.section);
+                    // On mobile, collapse menu after selection
+                    if (window.innerWidth < 768) {
+                        mainNav.classList.remove('expanded');
+                    }
+                });
+            });
+            
+            // Mobile menu toggle
+            menuToggle.addEventListener('click', () => {
+                mainNav.classList.toggle('expanded');
+            });
+
+            // Knot Browser Filters/Sort
+            searchInput.addEventListener('input', renderKnotBrowser);
+            filterLevelSelect.addEventListener('change', renderKnotBrowser);
+            filterCategorySelect.addEventListener('change', renderKnotBrowser);
+            sortBySelect.addEventListener('change', renderKnotBrowser);
+
+            // Knot Detail View
+            backToBrowserButton.addEventListener('click', () => navigateTo('browser'));
+            backToBrowserBottomButton.addEventListener('click', () => navigateTo('browser'));
+             // Edit/Delete buttons attached in renderKnotDetail
+
+            // Add/Edit Knot Form
+            knotForm.addEventListener('submit', handleKnotFormSubmit);
+            addMediaUrlButton.addEventListener('click', () => addMediaUrlRow()); // Add blank row on button click
+            cancelKnotFormButton.addEventListener('click', () => {
+                resetKnotForm(); // Clear form state
+                navigateTo('browser');
+            });
+             // Remove button listeners added dynamically
+
+             // Test Mode Setup
+             startTestButton.addEventListener('click', startTest);
+
+             // Test Mode Interface
+             revealAnswerButton.addEventListener('click', handleRevealAnswer);
+             failButton.addEventListener('click', () => handleTestResult(false));
+             successButton.addEventListener('click', () => handleTestResult(true));
+             endTestButton.addEventListener('click', () => endTest(true));
+
+             // Keyboard shortcuts
+             document.addEventListener('keydown', (e) => {
+                if (currentView === 'test-mode' && testInterfaceSection.offsetParent !== null) {
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+                        return; // Don't interfere with form inputs
+                    }
+                    if (!e.repeat) {
+                         if ((e.key === 'r' || e.key === 'R') && !revealAnswerButton.classList.contains('hidden')) {
+                            handleRevealAnswer(); e.preventDefault();
+                         } else if ((e.key === 'f' || e.key === 'F') && !failButton.classList.contains('hidden')) {
+                            handleTestResult(false); e.preventDefault();
+                         } else if ((e.key === 's' || e.key === 'S') && !successButton.classList.contains('hidden')) {
+                            handleTestResult(true); e.preventDefault();
+                         }
+                    }
+                }
+             });
+
+             // Import/Export
+             exportButton.addEventListener('click', handleExport);
+             importFileInput.addEventListener('change', handleFileSelect);
+             importButton.addEventListener('click', handleImport);
+             resetAllDataButton.addEventListener('click', handleResetAllData);
+
+             // Handle session resumption/initial load
+             window.addEventListener('load', () => {
+                 if (loadTestSessionState()) {
+                     navigateTo('test-mode');
+                     testSetupSection.classList.add('hidden');
+                     testInterfaceSection.classList.remove('hidden');
+                     testSummarySection.classList.add('hidden');
+                     displayCurrentTestKnot();
+                 } else {
+                     navigateTo('browser'); // Default view
+                 }
+             });
+
+             // Save session state before unloading
+             window.addEventListener('beforeunload', saveTestSessionState);
+
+             // Additional event listeners for Import/Export
+             importLocalTab.addEventListener('click', () => showImportTab('file'));
+             importUrlTab.addEventListener('click', () => showImportTab('url'));
+             importUrlValidateButton.addEventListener('click', validateImportUrl);
+             importUrlInput.addEventListener('keypress', (e) => {
+                 if (e.key === 'Enter') {
+                     validateImportUrl();
+                 }
+             });
+        }
+
+
+        // --- Initialization ---
+        function initializeApp() {
+            showLoading();
+            
+            // Register service worker for offline capabilities
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./service-worker.js')
+                        .then(registration => {
+                            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                        })
+                        .catch(error => {
+                            console.log('ServiceWorker registration failed: ', error);
+                        });
+                });
+            }
+            
+            loadKnots();
+            loadHistory(); // Load historical data
+            populateCategoryFilters(); // Populate filters initially
+            setupEventListeners();
+            // Initial navigation is handled by the 'load' event listener checking session state
+            hideLoading();
+        }
+
+        // Start the application
+        initializeApp();
+
+    </script>
+
+</body>
+</html>
